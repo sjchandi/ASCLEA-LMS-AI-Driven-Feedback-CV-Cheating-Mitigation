@@ -24,7 +24,7 @@
 - **Administration**: Manage staff, permissions, and system settings.  
 - **Archives & Backup/Restore**: Securely archive data and restore backups when needed.  
 
-## Technology Stack
+## Tech Stack
 - Laravel
 - Python Flask (API)
 - ReactJS
