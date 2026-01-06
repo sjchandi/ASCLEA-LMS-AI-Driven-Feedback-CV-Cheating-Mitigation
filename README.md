@@ -25,9 +25,6 @@
 - **Archives & Backup/Restore**: Securely archive data and restore backups when needed.  
 
 ## Technology Stack
-
-## Technology Stack
-
 - Laravel
 - Python Flask (API)
 - ReactJS
