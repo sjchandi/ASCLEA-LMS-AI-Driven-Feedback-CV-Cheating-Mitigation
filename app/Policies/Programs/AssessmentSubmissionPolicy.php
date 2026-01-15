@@ -175,4 +175,12 @@ class AssessmentSubmissionPolicy
 
         return $isAssessmentAuthor;
     }
+
+    public function resetStudentAssessmentSubmission(User $user, Assessment $assessment)
+    {
+        $isAdmin = $user->role->role_name === "admin";
+        $isAssessmentAuthor = $assessment->author->user_id === $user->user_id;
+
+        return $isAssessmentAuthor || $isAdmin;
+    }
 }

@@ -5,6 +5,7 @@ import { usePage } from "@inertiajs/react";
 import useUserStore from "../../Stores/User/userStore";
 import { io } from "socket.io-client";
 import useModulesStore from "../../Pages/Programs/ProgramComponent/CourseComponent/CourseContentTab/ModulesComponents/Stores/modulesStore";
+import OnlineUsersSocketProvider from "../../Providers/OnlineUsersSocketProvider";
 
 export default function MainLayout({ children }) {
     const setAuthUser = useUserStore((state) => state.setAuthUser);
@@ -30,54 +31,6 @@ export default function MainLayout({ children }) {
         if (user) setAuthUser(user);
     }, []);
 
-    // ------------------- SOCKET.IO ONLINE TRACKING -------------------
-
-    const host = import.meta.env.VITE_MAIN_URL;
-    const path = import.meta.env.VITE_SOCKET_IO_PATH;
-
-    const port = import.meta.env.VITE_SOCKET_IO_PORT;
-
-    const url = port ? `${host}:${port}` : host;
-
-    console.log(url);
-
-    useEffect(() => {
-        if (!user) return;
-
-        console.log("user role:", user);
-
-        // if (user.role_name !== "student") return;
-
-        // Connect to server
-        const socket = io(url, {
-            path, // use /socket.io for dev, /online for prod
-            transports: ["websocket"],
-        });
-
-        // Notify server that student is online
-        socket.emit("student_online", { user: user });
-
-        // Optional: send ping every 30 sec to stay online
-        const pingInterval = setInterval(() => {
-            socket.emit("student_ping", { user: user });
-        }, 30000);
-
-        // When window closes or unmounts, notify offline
-        const handleBeforeUnload = () => {
-            socket.emit("student_offline", { user: user });
-        };
-
-        window.addEventListener("beforeunload", handleBeforeUnload);
-
-        return () => {
-            clearInterval(pingInterval);
-            socket.emit("student_offline", { user: user });
-            socket.disconnect();
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-        };
-    }, [user]);
-    // -------------------------------------------------------------------
-
     // Get the width of window
     useEffect(() => {
         const handleResize = () => {
@@ -97,34 +50,36 @@ export default function MainLayout({ children }) {
     };
 
     return (
-        <div className="flex relative h-screen overflow-y-hidden">
-            <Sidebar
-                isSidebarOpen={isSidebarOpen}
-                setIsSidebarOpen={setIsSidebarOpen}
-                isMdScreen={isMdScreen}
-                closeSidebar={closeSidebar}
-            />
-            {isSidebarOpen && (
-                <div
-                    onClick={closeSidebar}
-                    className="fixed inset-0 bg-black/25 z-40 lg:hidden transition-opacity duration-300"
-                />
-            )}
-            <div
-                className="flex flex-col items-center w-full h-screen overflow-x-hidden"
-                scroll-region=""
-            >
-                <Navbar
+        <OnlineUsersSocketProvider user={user}>
+            <div className="flex relative h-screen overflow-y-hidden">
+                <Sidebar
+                    isSidebarOpen={isSidebarOpen}
                     setIsSidebarOpen={setIsSidebarOpen}
                     isMdScreen={isMdScreen}
+                    closeSidebar={closeSidebar}
                 />
-                <main
-                    className="flex-1 flex justify-center items-start px-6 py-5 sm:px-8 w-full"
+                {isSidebarOpen && (
+                    <div
+                        onClick={closeSidebar}
+                        className="fixed inset-0 bg-black/25 z-40 lg:hidden transition-opacity duration-300"
+                    />
+                )}
+                <div
+                    className="flex flex-col items-center w-full h-screen overflow-x-hidden"
                     scroll-region=""
                 >
-                    <div className="w-full max-w-[1400px]">{children}</div>
-                </main>
+                    <Navbar
+                        setIsSidebarOpen={setIsSidebarOpen}
+                        isMdScreen={isMdScreen}
+                    />
+                    <main
+                        className="flex-1 flex justify-center items-start px-6 py-5 sm:px-8 w-full"
+                        scroll-region=""
+                    >
+                        <div className="w-full max-w-[1400px]">{children}</div>
+                    </main>
+                </div>
             </div>
-        </div>
+        </OnlineUsersSocketProvider>
     );
 }

@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Staff List</title>
+    <title>Quiz Responses</title>
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;

@@ -37,6 +37,7 @@ class QuizController extends Controller
     {
 
         $validatedQuizDetails = $req->validated();
+
         $this->quizService->saveUpdatedQuizDetails($validatedQuizDetails, $quiz);
 
         return response()->json('Quiz changes was successfully saved.');

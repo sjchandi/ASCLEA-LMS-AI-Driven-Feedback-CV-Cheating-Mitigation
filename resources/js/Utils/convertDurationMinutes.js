@@ -9,7 +9,7 @@ export const convertDurationMinutes = (durationMinutes) => {
 
     const hours = Math.floor(durationMinutes / 60);
     const minutes =
-        durationMinutes > 60 ? durationMinutes % 60 : durationMinutes;
+        durationMinutes >= 60 ? durationMinutes % 60 : durationMinutes;
 
     formattedTime =
         hours || minutes

@@ -53,18 +53,22 @@ class SectionController extends Controller
 
         $section->update($validatedSectionDetails);
 
-        return response()->json(['success' => "Section updated successfully.", 'data' => $this->sectionService->getSectionCompleteDetails($section->refresh())]);
+        return response()->json(['success' => "Section title updated successfully.", 'data' => $this->sectionService->getSectionCompleteDetails($section->refresh())]);
     }
 
     public function publishUnpublishSection(Program $program, Course $course, Section $section)
     {
         if ($section->status ===  "published") {
             $section->update(['status' => 'draft']);
+
+            return response()->json(['success' => "Section unpublished successfully.", 'data' => $this->sectionService->getSectionCompleteDetails($section->refresh())]);
         } else {
             $section->update(['status' => 'published']);
-        }
 
-        return response()->json(['success' => "Section updated successfully.", 'data' => $this->sectionService->getSectionCompleteDetails($section->refresh())]);
+            $this->sectionService->sendSectionNotification($section, $course);
+
+            return response()->json(['success' => "Section published successfully.", 'data' => $this->sectionService->getSectionCompleteDetails($section->refresh())]);
+        }
     }
 
     public function archiveSection(Program $program, Course $course, Section $section)

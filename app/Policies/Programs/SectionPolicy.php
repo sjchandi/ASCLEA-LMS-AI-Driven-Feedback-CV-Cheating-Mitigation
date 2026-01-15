@@ -42,8 +42,10 @@ class SectionPolicy
      */
     public function updateSection(User $user, Section $section): bool
     {
-        $isAuthor = $section->created_by === $user->user_id;
-        return  $isAuthor;
+        // Check if user is an admin
+        $isAdmin = $user->role->role_name == "admin";
+
+        return $isAdmin;
     }
 
     /**
@@ -51,8 +53,10 @@ class SectionPolicy
      */
     public function archiveSection(User $user, Section $section): bool
     {
-        $isAuthor = $section->created_by === $user->user_id;
-        return  $isAuthor;
+        // Check if user is an admin
+        $isAdmin = $user->role->role_name == "admin";
+
+        return $isAdmin;
     }
 
     /**
@@ -60,11 +64,9 @@ class SectionPolicy
      */
     public function restoreSection(User $user, string $sectionId): bool
     {
-        // Get the instace of model since model binding
-        // is not working for soft deleted data
-        $section = Section::withTrashed()->findOrFail($sectionId);
+        // Check if user is an admin
+        $isAdmin = $user->role->role_name == "admin";
 
-        $isAuthor = $section->created_by === $user->user_id;
-        return  $isAuthor;
+        return $isAdmin;
     }
 }

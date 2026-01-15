@@ -242,22 +242,17 @@ export default function Profile() {
         const errors = [];
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,10}$/;
 
-        const requiredSelects = [];
         if (isAdmin) {
-            requiredSelects.push({ value: formData.gender, name: "Gender" });
-        }
-
-        if (!formData.email || formData.email.trim() === "") {
-            errors.push("Email is required");
-        } else if (!emailRegex.test(formData.email)) {
-            errors.push("Email is invalid");
-        }
-
-        requiredSelects.forEach((field) => {
-            if (!field.value || field.value.trim() === "") {
-                errors.push(`${field.name} is required`);
+            if (!formData.email || formData.email.trim() === "") {
+                errors.push("Email is required");
+            } else if (!emailRegex.test(formData.email)) {
+                errors.push("Email is invalid");
             }
-        });
+
+            if (!formData.gender) {
+                errors.push("Gender is required");
+            }
+        }
 
         if (errors.length > 0) {
             displayToast(
@@ -267,7 +262,33 @@ export default function Profile() {
             return;
         }
 
-        router.put(route("profile.update"), formData, {
+        // Only include fields that the user is allowed to update
+        // Admin can update all personal info
+        // Non-admin users can only update address info
+        const payload = isAdmin
+            ? {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                middleName: formData.middleName,
+                phone: formData.phone,
+                email: formData.email,
+                birthday: formData.birthday,
+                gender: formData.gender,
+                houseNoSt: formData.houseNoSt,
+                region: formData.region,
+                province: formData.province,
+                city: formData.city,
+                barangay: formData.barangay,
+            }
+            : {
+                houseNoSt: formData.houseNoSt,
+                region: formData.region,
+                province: formData.province,
+                city: formData.city,
+                barangay: formData.barangay,
+            };
+
+        router.put(route("profile.update"), payload, {
             onSuccess: (page) => {
                 setIsEdit(false);
                 displayToast(
@@ -440,7 +461,7 @@ export default function Profile() {
                             type="text"
                             name="phone"
                             value={formData.phone}
-                            disabled={!isEdit}
+                            disabled={!isEdit || !isAdmin}
                             maxLength={11} // limits input to 11 characters
                             onChange={(e) => {
                                 const value = e.target.value;
@@ -453,7 +474,7 @@ export default function Profile() {
                                 }
                             }}
                             className={`border px-3 py-2 ${
-                                !isEdit ? "text-ascend-gray1" : ""
+                                !isEdit || !isAdmin ? "text-ascend-gray1" : ""
                             } border-ascend-gray1 focus:outline-ascend-blue`}
                         />
                     </div>
@@ -465,7 +486,7 @@ export default function Profile() {
                             type="email"
                             name="email"
                             value={formData.email}
-                            disabled={!isEdit}
+                            disabled={!isEdit || !isAdmin}
                             onChange={(e) => {
                                 const value = e.target.value;
                                 setFormData((prev) => ({
@@ -486,10 +507,10 @@ export default function Profile() {
                                 }
                             }}
                             className={`border px-3 py-2 ${
-                                !isEdit ? "text-ascend-gray1" : ""
+                                !isEdit || !isAdmin ? "text-ascend-gray1" : ""
                             } border-ascend-gray1 focus:outline-ascend-blue`}
                         />
-                        {emailError && (
+                        {isAdmin && emailError && (
                             <span className="text-red-500 text-sm">
                                 {emailError}
                             </span>

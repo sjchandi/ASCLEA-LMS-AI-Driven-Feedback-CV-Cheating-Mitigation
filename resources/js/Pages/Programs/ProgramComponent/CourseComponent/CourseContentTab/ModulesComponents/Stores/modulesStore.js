@@ -264,6 +264,7 @@ const useModulesStore = create(
                 });
             },
 
+            // Handle logic ffor unlocking the next assessment or material
             unlockSectionAndSectionItems: (
                 courseId,
                 sectionId,

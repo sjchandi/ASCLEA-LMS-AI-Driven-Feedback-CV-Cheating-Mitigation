@@ -39,6 +39,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 require base_path('routes/Programs/modules.php');
                 require base_path('routes/Programs/grades.php');
                 require base_path('routes/Programs/posts.php');
+
+                // Notification
+                require base_path('routes/notifications.php');
+
+                // Backup and Restore
+                require base_path('routes/BackupAndRestore/backupAndRestore.php');
             });
         },
     )

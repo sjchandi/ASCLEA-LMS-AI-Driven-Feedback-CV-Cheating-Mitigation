@@ -44,8 +44,10 @@ const AdmissionPage = ({ student }) => {
 
                     {/* Pending and Enrolled Tab */}
                     {!isLoading && activeTab === 0 && <PendingPage pendingStudents={pendingStudents} />}
-                    {!isLoading && activeTab === 1 && <EnrolledPage enrolledStudents={enrolledStudents} />}
+                    {!isLoading && activeTab === 1 && <EnrolledPage enrolledStudents={enrolledStudents} role={user.role} />}
                 </div>
+            ) : user && user?.role === "faculty" ? (
+                <EnrolledPage enrolledStudents={enrolledStudents} role={user.role} />
             ) : (
                 <UnapprovedStudentAdmission student={student} />
             )}

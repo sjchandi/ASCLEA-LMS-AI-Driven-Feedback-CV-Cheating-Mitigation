@@ -31,6 +31,9 @@ Route::prefix('courses/{course}/assessments/{assessment}/')
         // Route for showing the quiz result 
         Route::post('quizzes/{quiz}/assessment-submissions/{assessmentSubmission}/result/ai/feedback', [AssessmentSubmissionController::class, 'quizResultFeedback'])->can('generateQuizResultFeedback', 'assessmentSubmission')->name('generate.quiz.result.feedback');
 
+        // Reset student assessment submission
+        Route::delete('quizzes/{quiz}/assessment-submissions/{assessmentSubmission}', [AssessmentSubmissionController::class, 'resetStudentSubmission'])->can('resetStudentAssessmentSubmission', [AssessmentSubmission::class, 'assessment'])->name('reset.student.assessment.submission');
+
         // Route for uploading activity files
         Route::put('activity/files', [AssessmentSubmissionController::class, 'uploadActivityFiles'])->can('uploadActivityFile', [AssessmentSubmission::class, 'course'])->name('upload.activity.files');
 
@@ -56,4 +59,12 @@ Route::post('/detected-cheatings', [DetectedCheatingController::class, 'store'])
 
 Route::get('/detected-cheatings/{assessment_submission_id}', [DetectedCheatingController::class, 'fetchBySubmission'])
     ->name('detected-cheatings.fetch')
+    ->middleware(['auth', 'verified']);
+
+Route::post('/tab-switching', [DetectedCheatingController::class, 'storeTabDetect'])
+    ->name('tab-switching.store')
+    ->middleware(['auth', 'verified']);
+
+Route::get('/tab-switching/{assessment_submission_id}', [DetectedCheatingController::class, 'fetchTabDetectBySubmission'])
+    ->name('tab-switching.fetch')
     ->middleware(['auth', 'verified']);

@@ -28,6 +28,7 @@ class SaveQuizRequest extends FormRequest
             'quiz_total_points' => 'nullable|numeric|min:0',
             'show_answers_after' => 'boolean',
             'cheating_mitigation' => 'boolean',
+            'randomize' => 'boolean',
             'cv_options' => 'nullable|array',
             'cv_options.*' => 'string|in:book,laptop,cellphone,up,down,left,right',
         ];

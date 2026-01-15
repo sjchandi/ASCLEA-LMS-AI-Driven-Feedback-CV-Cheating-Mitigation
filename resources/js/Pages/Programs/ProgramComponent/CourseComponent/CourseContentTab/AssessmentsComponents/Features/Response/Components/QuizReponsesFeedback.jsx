@@ -62,8 +62,8 @@ export default function QuizReponsesFeedback() {
                     </div>
 
                     <p className="text-size3 md:text-size5 sm:w-100 text-wrap text-center italic">
-                        Not enough responses available to generate feedback.
-                        Please try again once more data is collected.
+                        Not enough responses available to generate and update
+                        feedback. Please try again once more data is collected.
                     </p>
                 </div>
             )}

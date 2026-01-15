@@ -9,31 +9,30 @@ import RoleGuard from "../../../../../../Components/Auth/RoleGuard";
 import { capitalize } from "lodash";
 import AssessmentForm from "./AssessmentForm";
 import { closeDropDown } from "../../../../../../Utils/closeDropdown";
-import useAssessmentsStore from "./Stores/assessmentsStore";
-import { displayToast } from "../../../../../../Utils/displayToast";
-import DefaultCustomToast from "../../../../../../Components/CustomToast/DefaultCustomToast";
-import axios from "axios";
 import ModalContainer from "../../../../../../Components/ModalContainer";
 import File from "../File";
 import { getRemainingDays } from "../../../../../../Utils/getRemainingDays";
 import ModalDocViewer from "../../../../../../Components/ModalDocViewer";
 import { MdQuiz } from "react-icons/md";
 import { BsFillClipboard2CheckFill } from "react-icons/bs";
+import useAssessment from "./Hooks/useAssessment";
 
 export default function AssessmentItem({
     assessmentDetails,
     setIsAssessmentFormOpen,
 }) {
-    // Assessment Store
-    const setAssessmentDetails = useAssessmentsStore(
-        (state) => state.setAssessmentDetails
-    );
-    const updateAssessmentInList = useAssessmentsStore(
-        (state) => state.updateAssessmentInList
-    );
-
     // get the id from url
     const { course, program, auth } = usePage().props;
+
+    // Custom hook
+    const {
+        unpublishAssessment,
+        handleArchiveAsessment,
+        handleRestoreAsessment,
+    } = useAssessment({
+        programId: program.program_id,
+        courseId: course.course_id,
+    });
 
     const [isEdit, setIsEdit] = useState(false);
     const [fileUrl, setFileUrl] = useState(null);
@@ -72,7 +71,10 @@ export default function AssessmentItem({
                         quiz: assessmentDetails.quiz.quiz_id,
                     })
                 );
-            } else if (auth.user.user_id === assessmentDetails.created_by) {
+            } else if (
+                auth.user.user_id === assessmentDetails.created_by ||
+                auth.user.role_name === "admin"
+            ) {
                 router.visit(
                     route("assessment.quiz-form.edit", {
                         assessment: assessmentDetails.assessment_id,
@@ -87,99 +89,6 @@ export default function AssessmentItem({
         closeDropDown();
         setIsEdit(true);
         setIsAssessmentFormOpen(false); // Close the add assessment form if open
-    };
-
-    const unpublishAssessment = async () => {
-        closeDropDown();
-
-        try {
-            const response = await axios.put(
-                route("assessment.unpublish", {
-                    program: program.program_id,
-                    course: course.course_id,
-                    assessment: assessmentDetails.assessment_id,
-                })
-            );
-
-            updateAssessmentInList(response.data.data, course.course_id);
-
-            displayToast(
-                <DefaultCustomToast message={response.data.success} />,
-                "success"
-            );
-        } catch (error) {
-            console.error(error);
-            displayToast(
-                <DefaultCustomToast
-                    message={"Something went wrong. Please try again."}
-                />,
-                "error"
-            );
-        }
-    };
-
-    const handleArchiveAsessment = async () => {
-        closeDropDown();
-        console.log(assessmentDetails.assessment_id);
-        try {
-            const response = await axios.delete(
-                route("assessment.archive", {
-                    program: program.program_id,
-                    course: course.course_id,
-                    assessment: assessmentDetails.assessment_id,
-                })
-            );
-            console.log(response);
-            updateAssessmentInList(
-                response.data.archivedAssessment,
-                course.course_id
-            );
-
-            displayToast(
-                <DefaultCustomToast message={response.data.success} />,
-                "success"
-            );
-        } catch (error) {
-            console.error(error);
-            displayToast(
-                <DefaultCustomToast
-                    message={"Something went wrong. Please try again."}
-                />,
-                "error"
-            );
-        }
-    };
-
-    const handleRestoreAsessment = async () => {
-        closeDropDown();
-        console.log(assessmentDetails.assessment_id);
-        try {
-            const response = await axios.put(
-                route("assessment.restore", {
-                    program: program.program_id,
-                    course: course.course_id,
-                    assessment: assessmentDetails.assessment_id,
-                })
-            );
-            console.log(response);
-            updateAssessmentInList(
-                response.data.restoredAssessment,
-                course.course_id
-            );
-
-            displayToast(
-                <DefaultCustomToast message={response.data.success} />,
-                "success"
-            );
-        } catch (error) {
-            console.error(error);
-            displayToast(
-                <DefaultCustomToast
-                    message={"Something went wrong. Please try again"}
-                />,
-                "error"
-            );
-        }
     };
 
     const handleFileClick = (fileId, fileName) => {
@@ -212,7 +121,9 @@ export default function AssessmentItem({
         <>
             <div
                 onClick={handleCardClick}
-                className="flex flex-col justify-between border border-ascend-gray1 shadow-shadow1 p-5 space-y-5 cursor-pointer card-hover mt-5"
+                className={`flex flex-col justify-between border border-ascend-gray1 shadow-shadow1 p-5 space-y-5 card-hover mt-5 ${
+                    assessmentDetails.deleted_at ? "" : "cursor-pointer"
+                }`}
             >
                 <div className="flex items-start sm:items-center gap-2 md:gap-2">
                     <div className="flex-1 min-w-0 flex flex-wrap gap-5">
@@ -239,18 +150,9 @@ export default function AssessmentItem({
                                         {"Archived"}
                                     </span>
                                 </div>
-                                <span className="font-bold">
-                                    {`Permanently deleted in
-                                   ${getRemainingDays(
-                                       assessmentDetails.deleted_at,
-                                       30
-                                   )}
-                                    days`}
-                                </span>
                             </div>
                         ) : (
-                            assessmentDetails.author.user_id ===
-                                auth.user.user_id && (
+                            auth.user.role_name !== "student" && (
                                 <div
                                     className={`px-2 ${
                                         assessmentDetails.status === "published"
@@ -269,7 +171,8 @@ export default function AssessmentItem({
                         )}
                     </div>
 
-                    {auth.user.user_id === assessmentDetails.created_by && (
+                    {(auth.user.user_id === assessmentDetails.created_by ||
+                        auth.user.role_name === "admin") && (
                         <RoleGuard allowedRoles={["admin", "faculty"]}>
                             <div className="flex items-center">
                                 <div
@@ -290,7 +193,11 @@ export default function AssessmentItem({
                                     >
                                         {assessmentDetails.deleted_at ? (
                                             <li
-                                                onClick={handleRestoreAsessment}
+                                                onClick={() =>
+                                                    handleRestoreAsessment(
+                                                        assessmentDetails.assessment_id
+                                                    )
+                                                }
                                             >
                                                 <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
                                                     Restore assessment
@@ -311,8 +218,10 @@ export default function AssessmentItem({
                                                     </li>
                                                 ) : (
                                                     <li
-                                                        onClick={
-                                                            unpublishAssessment
+                                                        onClick={() =>
+                                                            unpublishAssessment(
+                                                                assessmentDetails.assessment_id
+                                                            )
                                                         }
                                                     >
                                                         <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
@@ -321,8 +230,10 @@ export default function AssessmentItem({
                                                     </li>
                                                 )}
                                                 <li
-                                                    onClick={
-                                                        handleArchiveAsessment
+                                                    onClick={() =>
+                                                        handleArchiveAsessment(
+                                                            assessmentDetails.assessment_id
+                                                        )
                                                     }
                                                 >
                                                     <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
@@ -357,7 +268,9 @@ export default function AssessmentItem({
                         }}
                         className={`flex h-15 items-center space-x-4 p-2 border border-ascend-gray1 bg-ascend-white ${
                             auth.user.role_name === "student" ||
-                            auth.user.user_id === assessmentDetails.created_by
+                            auth.user.user_id ===
+                                assessmentDetails.created_by ||
+                            auth.user.role_name === "admin"
                                 ? "hover-change-bg-color cursor-pointer"
                                 : ""
                         }`}
@@ -389,12 +302,16 @@ export default function AssessmentItem({
 
                 <div className="flex flex-wrap-reverse justify-between items-baseline font-nunito-sans gap-2">
                     <span className="text-size1">
-                        {assessmentDetails.created_at !==
-                        assessmentDetails.updated_at
-                            ? ` Updated on ${formatDueDateTime(
+                        {assessmentDetails.deleted_at
+                            ? `Archived on ${formatFullDate(
+                                  assessmentDetails.deleted_at
+                              )}`
+                            : assessmentDetails.updated_at !==
+                              assessmentDetails.created_at
+                            ? `Updated on ${formatFullDate(
                                   assessmentDetails.updated_at
                               )}`
-                            : ` Posted on ${formatFullDate(
+                            : `Created on ${formatFullDate(
                                   assessmentDetails.created_at
                               )}`}
                     </span>

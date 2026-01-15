@@ -28,6 +28,7 @@ class Quiz extends Model
         'duration',
         'created_by',
         'cheating_mitigation',
+        'randomize',
         'show_answers_after',
     ];
 
@@ -36,6 +37,7 @@ class Quiz extends Model
         return [
             'cheating_mitigation' => 'boolean',
             'show_answers_after' => 'boolean',
+            'randomize' => 'boolean',
         ];
     }
 
@@ -53,5 +55,4 @@ class Quiz extends Model
     {
         return $this->hasMany(Question::class, 'quiz_id');
     }
-
 }

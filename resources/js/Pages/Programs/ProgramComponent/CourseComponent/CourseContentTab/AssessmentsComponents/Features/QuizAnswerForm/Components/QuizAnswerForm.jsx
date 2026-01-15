@@ -44,14 +44,8 @@ export default function QuizAnswerForm({
         );
     }, [questions.data]);
 
-    useEffect(() => {
-        console.log(studentAnswers);
-    }, [studentAnswers]);
-
     const handleNextOrSubmit = async () => {
         if (questions.current_page === questions.last_page) {
-            console.log("SUBMITTING QUIZ");
-
             submitQuiz({
                 courseId: courseId,
                 assessmentId: assessmentId,
@@ -94,13 +88,14 @@ export default function QuizAnswerForm({
                     </div>
 
                     {/* Questions here */}
-
                     {questions &&
                         questions.data.length > 0 &&
-                        questions.data.map((question) => (
+                        questions.data.map((question, index) => (
                             <QuestionItem
                                 key={question.question_id}
                                 questionDetails={question}
+                                index={index}
+                                currentPage={questions.current_page}
                                 requiredError={
                                     questionRequiredError &&
                                     questionRequiredError[question.question_id]

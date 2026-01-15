@@ -109,9 +109,15 @@ export default function ViewMember() {
                     {/* head */}
                     <thead className="text-ascend-black">
                         <tr className="border-b-2 border-ascend-gray3">
-                            <th>Course Code</th>
-                            <th>Course Name</th>
-                            <th>Schedule</th>
+                            <th className="text-ascend-black font-black">
+                                Course Code
+                            </th>
+                            <th className="text-ascend-black font-black">
+                                Course Name
+                            </th>
+                            <th className="text-ascend-black font-black">
+                                Schedule
+                            </th>
                         </tr>
                     </thead>
                     <tbody>

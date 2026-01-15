@@ -6,7 +6,7 @@ import { regions, provinces, cities, barangays } from "select-philippines-addres
 import { displayToast } from "../../../Utils/displayToast";
 import DefaultCustomToast from "../../../Components/CustomToast/DefaultCustomToast";
 
-const DataFormFields = ({ student, isEditDisabled, setIsEditDisabled }) => {
+const DataFormFields = ({ student, isEditDisabled, setIsEditDisabled, role}) => {
     //=========================== Local state to control form and editing ===========================//
     const [formData, setFormData] = useState({
         first_name: student.user?.first_name || "",
@@ -242,8 +242,9 @@ const DataFormFields = ({ student, isEditDisabled, setIsEditDisabled }) => {
     };
     return (
         <>
-            <div className="flex justify-end items-center">
-                {isEditDisabled ? (
+        <div className="flex justify-end items-center">
+            {role === "admin" && (
+                isEditDisabled ? (
                     <PrimaryButton
                         text="Edit"
                         btnColor="bg-ascend-blue"
@@ -262,8 +263,10 @@ const DataFormFields = ({ student, isEditDisabled, setIsEditDisabled }) => {
                             doSomething={handleSave}
                         />
                     </div>
-                )}
-            </div>
+                )
+            )}
+        </div>
+
 
             <form autoComplete="off" className="mt-5">
                 {/*===========================NAME FIELDS===========================*/}

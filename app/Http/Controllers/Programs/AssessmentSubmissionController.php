@@ -68,7 +68,7 @@ class AssessmentSubmissionController extends Controller
                 'quiz' => $quiz,
                 'quizOptions' => $quiz->options,
                 'assessmentSubmissionId' => $assessmentSubmission->assessment_submission_id,
-                'questions' => fn() => $this->questionService->getQuestions($quiz, $assessmentSubmission->assessment_submission_id, $optionSlectedFields, $studentAnswerSelectedFields, true)
+                'questions' => fn() => $this->questionService->getQuestions($quiz, $assessmentSubmission, $optionSlectedFields, $studentAnswerSelectedFields, true)
             ]);
         }
 
@@ -116,7 +116,7 @@ class AssessmentSubmissionController extends Controller
                 },
             ]),
             'quiz' => $quiz,
-            'assessmentSubmission' => fn() => $assessmentSubmission->only(['assessment_id', 'assessment_submission_id', 'created_at', 'submitted_at'])
+            'assessmentSubmission' => fn() => $assessmentSubmission->only(['assessment_id', 'assessment_submission_id', 'created_at', 'submitted_at', 'feedback'])
         ]);
     }
 
@@ -164,7 +164,7 @@ class AssessmentSubmissionController extends Controller
             'assessmentSubmission' => fn() => $assessmentSubmission->only(['assessment_id', 'assessment_submission_id', 'created_at', 'submitted_at', 'score', 'feedback', 'time_spent']),
             'assessment' => $assessment->only('assessment_id', 'created_by'),
             'quiz' => $quiz,
-            'questions' => fn() => $this->questionService->getQuestions($quiz, $assessmentSubmission->assessment_submission_id,  $optionSlectedFields, $studentAnswerSelectedFields, false),
+            'questions' => fn() => $this->questionService->getQuestions($quiz, $assessmentSubmission,  $optionSlectedFields, $studentAnswerSelectedFields, false),
             'prevQuizAssessmentSubmitted' => fn() => $this->assessmentSubmissionService->getPrevQuizAssessmentSubmitted($request->user(), $assessmentSubmission),
             'studentData' => fn() => $assessmentSubmission->load([
                 'submittedBy.member.user' => function ($query) {
@@ -185,7 +185,7 @@ class AssessmentSubmissionController extends Controller
         // This is for generating the quiz result feedback
         if (!is_null($assessmentSubmission->submitted_at) && is_null($assessmentSubmission->feedback)) {
 
-            $questions = $this->questionService->getQuestions($quiz, $assessmentSubmission->assessment_submission_id,  $optionSlectedFields, $studentAnswerSelectedFields, false);
+            $questions = $this->questionService->getQuestions($quiz, $assessmentSubmission,  $optionSlectedFields, $studentAnswerSelectedFields, false);
 
             $inputData =  $this->assessmentSubmissionService->formatInputData($questions)->toArray();
 
@@ -263,7 +263,22 @@ class AssessmentSubmissionController extends Controller
             $validated['selectAll'],
             $validated['selectedSubmittedActivities'] ?? [],
             $validated['unselectedSubmittedActivities'] ?? [],
-            $assessment->assessment_id
+            $assessment->assessment_id,
+            $course,
+            $assessment
         );
+    }
+
+    // Handles reset for student assessment submission
+    public function resetStudentSubmission(Request $request, Course $course, Assessment $assessment, Quiz $quiz, AssessmentSubmission $assessmentSubmission)
+    {
+        // Soft delete current student assessment submission
+        $assessmentSubmission->delete();
+
+        return to_route('assessment.responses.view', [
+            'program'    => $course->program,
+            'course'     => $course,
+            'assessment' => $assessment,
+        ])->with('success', 'Student response reset successfully.');
     }
 }

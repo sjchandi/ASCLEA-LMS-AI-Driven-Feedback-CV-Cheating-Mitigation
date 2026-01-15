@@ -30,7 +30,7 @@ const Monitoring = ({ onFaceDetected, options, assessmentSubmissionId }) => {
     const host = import.meta.env.VITE_MAIN_URL;
     const port = import.meta.env.VITE_CV_PORT;
 
-    const CV_BASE_URL = `${host}:${port}`;
+    const CV_BASE_URL = import.meta.env.VITE_CV_URL;
 
     const detectionHeadMap = {
         up: "Looking Up",
@@ -182,7 +182,6 @@ const Monitoring = ({ onFaceDetected, options, assessmentSubmissionId }) => {
     }, [objectDetected, missingFace, lookingAway]);
 
     const startCV = async () => {
-        console.log("startCV triggered");
 
         try {
             setError(null);

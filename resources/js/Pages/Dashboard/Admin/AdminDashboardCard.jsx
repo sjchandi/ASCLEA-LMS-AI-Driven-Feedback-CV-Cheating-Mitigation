@@ -5,32 +5,26 @@ import { BsFillPeopleFill } from "react-icons/bs";
 import { RiFileList2Fill } from "react-icons/ri";
 import DashboardCard from "../Component/DashboardCard";
 import { useState, useEffect } from "react";
-import { io } from "socket.io-client";
+import { useSocket } from "../../../Providers/OnlineUsersSocketProvider";
+import useOnlineStudentStore from "../Stores/onlineStudentStore";
 
 export default function StaffDashboardCard({ stats }) {
-    const [onlineStudents, setOnlineStudents] = useState(0);
+    const onlineStudents = useOnlineStudentStore(
+        (state) => state.onlineStudents
+    );
 
-    const host = import.meta.env.VITE_MAIN_URL;
-    const path = import.meta.env.VITE_SOCKET_IO_PATH;
+    const socket = useSocket();
 
-    const port = import.meta.env.VITE_SOCKET_IO_PORT;
+    // useEffect(() => {
+    //     if (!socket) return;
 
-    const url = port ? `${host}:${port}` : host;
+    //     socket.on("online_students", setOnlineStudents);
 
-    useEffect(() => {
-        const socket = io(url, {
-            path, // use /socket.io for dev, /online for prod
-            transports: ["websocket"],
-        });
-
-        socket.on("online_students", (users) => {
-            setOnlineStudents(
-                users.filter((user) => user.role_name === "student").length
-            );
-        });
-
-        return () => socket.disconnect();
-    }, []);
+    //     // Cleanup: only remove the listener
+    //     return () => {
+    //         socket.off("online_students", setOnlineStudents);
+    //     };
+    // }, [socket]);
 
     return (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
@@ -50,7 +44,7 @@ export default function StaffDashboardCard({ stats }) {
                 label="Pending Enrollees"
             />
             <DashboardCard
-                value={onlineStudents} // if you implement online_students
+                value={onlineStudents.length} // if you implement online_students
                 icon={
                     <span className="text-size5 relative">
                         <BsFillPeopleFill />

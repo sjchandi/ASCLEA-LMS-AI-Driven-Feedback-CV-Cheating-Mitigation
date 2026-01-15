@@ -4,8 +4,6 @@ use App\Http\Controllers\Archives\ArchiveController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-
-
 Route::prefix('archives')
     ->middleware(['auth', 'verified', 'preventBack'])
     ->group(function () {

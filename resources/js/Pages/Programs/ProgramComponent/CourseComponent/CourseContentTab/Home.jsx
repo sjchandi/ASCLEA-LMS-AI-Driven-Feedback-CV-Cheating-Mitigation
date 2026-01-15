@@ -98,7 +98,7 @@ export default function Home({}) {
                 <AlertModal
                     title={"Archive Course"}
                     description={
-                        "Are you sure you want to archive this course? It can be restored later if necessary"
+                        "Are you sure you want to archive this course? It can be restored later if necessary."
                     }
                     closeModal={() => setOpenAlertModal(false)}
                     onConfirm={archiveCourse}

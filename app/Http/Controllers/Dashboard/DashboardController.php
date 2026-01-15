@@ -275,54 +275,70 @@ class DashboardController extends Controller
 
     private function getStudentAssessments($assignedCourseIds)
     {
+        // ACCOMPLISHED: Any assessment where the student has a recorded submission date
         $accomplished = AssessmentSubmission::whereIn('submitted_by', $assignedCourseIds)
-            ->whereIn('submission_status', ['submitted', 'returned'])
-            ->with(['assessment' => fn($q) =>
-                $q->select('assessment_id', 'assessment_title', 'due_datetime', 'course_id')
-                  ->with(['course:course_id,course_name,course_code'])])
-            ->select('assessment_submission_id', 'assessment_id', 'score', 'submitted_at', 'submission_status')
-            ->latest('submitted_at')->paginate(5)
-            ->through(fn($submission) => [
-                'assessment_title' => $submission->assessment?->assessment_title ?? 'Untitled',
-                'course_name' => $submission->assessment?->course?->course_name ?? 'Unknown Course',
-                'course_code' => $submission->assessment?->course?->course_code ?? '-',
-                'due_date' => $submission->assessment?->due_datetime ? Carbon::parse($submission->assessment->due_datetime)->format('F d, Y') : null,
-                'score' => $submission->score ?? 0,
-                'status' => ucfirst($submission->submission_status),
-            ]);
-
-        $pending = Assessment::whereIn('course_id', function ($query) use ($assignedCourseIds) {
-                $query->select('course_id')
-                    ->from('assigned_courses')
-                    ->whereIn('assigned_course_id', $assignedCourseIds);
-            })
-            ->where('status', 'published')
-            
-            // Exclude assessments where this student has already submitted or been returned
-            ->whereDoesntHave('assessmentSubmissions', function ($query) use ($assignedCourseIds) {
-                $query->whereIn('submitted_by', $assignedCourseIds)
-                      ->whereIn('submission_status', ['submitted', 'returned']);
-            })
-
-            ->with(['course' => fn($q) =>
-                $q->select('course_id', 'course_name', 'course_code')
+            ->whereNotNull('submitted_at') 
+            ->with([
+                'assessment' => function ($q) {
+                    // Ensure due_datetime is selected here
+                    $q->select('assessment_id', 'assessment_title', 'due_datetime', 'course_id', 'total_points')
+                    ->with(['course:course_id,course_name,course_code', 'quiz:quiz_id,assessment_id,quiz_total_points']);
+                }
             ])
-            ->select('assessment_id', 'assessment_title', 'due_datetime', 'total_points', 'course_id')
-            ->orderBy('assessment_id', 'desc')
+            ->select('assessment_submission_id', 'assessment_id', 'score', 'submitted_at')
+            ->latest('submitted_at')
             ->paginate(5)
-            ->through(fn($assessment) => [
-                'assessment_title' => $assessment->assessment_title ?? 'Untitled',
-                'course_name'      => $assessment->course?->course_name ?? 'Unknown Course',
-                'course_code'      => $assessment->course?->course_code ?? '-',
-                'due_date'         => $assessment->due_datetime
-                                        ? Carbon::parse($assessment->due_datetime)->format('F d, Y')
-                                        : null,
-                'possible_score'   => $assessment->total_points ?? 0,
-                'status'           => 'Assigned',
-            ]);
+            ->through(function ($submission) {
+                $assessment = $submission->assessment;
+                $maxPoints = $assessment->quiz->quiz_total_points ?? $assessment->total_points ?? 0;
 
-        return [$accomplished, $pending];
-    }
+                return [
+                    'assessment_title' => $assessment->assessment_title ?? 'Untitled',
+                    'course_name'      => $assessment->course?->course_name ?? 'Unknown Course',
+                    'course_code'      => $assessment->course?->course_code ?? '-',
+                    'score'            => $submission->score ?? 0,
+                    'max_points'       => $maxPoints,
+                    'submitted_at'     => Carbon::parse($submission->submitted_at)->format('M d, Y h:i A'),
+                    'due_date'         => $assessment->due_datetime 
+                                            ? Carbon::parse($assessment->due_datetime)->format('M d, Y') 
+                                            : 'No deadline',
+                ];
+            });
+
+        // PENDING: Published assessments that HAVE NOT been submitted by this student
+            $pending = Assessment::whereIn('course_id', function ($query) use ($assignedCourseIds) {
+                        $query->select('course_id')
+                            ->from('assigned_courses')
+                            ->whereIn('assigned_course_id', $assignedCourseIds);
+                    })
+                    ->where('status', 'published')
+                    ->whereDoesntHave('assessmentSubmissions', function ($query) use ($assignedCourseIds) {
+                        $query->whereIn('submitted_by', $assignedCourseIds)
+                            ->whereNotNull('submitted_at');
+                    })
+                    // 1. Eager load the quiz relationship
+                    ->with(['course:course_id,course_name,course_code', 'quiz:quiz_id,assessment_id,quiz_total_points'])
+                    ->select('assessment_id', 'assessment_title', 'due_datetime', 'total_points', 'course_id')
+                    ->orderBy('due_datetime', 'asc')
+                    ->paginate(5)
+                    ->through(function ($assessment) {
+                        // 2. Determine which point value to use
+                        // If the quiz relationship exists, use quiz_total_points, otherwise use assessment total_points
+                        $maxPoints = $assessment->quiz->quiz_total_points ?? $assessment->total_points ?? 0;
+
+                        return [
+                            'assessment_title' => $assessment->assessment_title ?? 'Untitled',
+                            'course_name'      => $assessment->course?->course_name ?? 'Unknown Course',
+                            'course_code'      => $assessment->course?->course_code ?? '-',
+                            'due_date'         => $assessment->due_datetime 
+                                                    ? Carbon::parse($assessment->due_datetime)->format('M d, Y') 
+                                                    : 'No deadline',
+                            'possible_score'   => $maxPoints, // This now reflects the Quiz points specifically
+                        ];
+                    });
+
+                return [$accomplished, $pending];
+            }
 
     private function computeAverageQuizScore($assignedCourseIds)
     {
@@ -358,7 +374,9 @@ class DashboardController extends Controller
 
         foreach ($submissions as $courseName => $courseSubmissions) {
             $sorted = $courseSubmissions->sortBy('submitted_at');
-            $half = ceil($sorted->count() / 2);
+            $totalCount = $sorted->count();
+            $half = ceil($totalCount / 2);
+            
             $previous = $sorted->take($half);
             $current = $sorted->slice($half);
 
@@ -367,10 +385,14 @@ class DashboardController extends Controller
                 return $points > 0 ? $carry + ($s->score / $points) * 100 : $carry;
             }, 0) / max($set->count(), 1);
 
-            $prevAvg = round($computeAvg($previous), 2);
-            $currAvg = round($computeAvg($current), 2);
+            $prevAvg = $previous->count() ? round($computeAvg($previous), 2) : 0;
+            $currAvg = $current->count() ? round($computeAvg($current), 2) : 0;
 
-            $improvement = $prevAvg > 0 ? round((($currAvg - $prevAvg) / $prevAvg) * 100, 2) : 0;
+            if ($current->count() > 0 && $prevAvg > 0) {
+                $improvement = round((($currAvg - $prevAvg) / $prevAvg) * 100, 2);
+            } else {
+                $improvement = 0;
+            }
 
             $rates[] = [
                 'course_name' => $courseName,

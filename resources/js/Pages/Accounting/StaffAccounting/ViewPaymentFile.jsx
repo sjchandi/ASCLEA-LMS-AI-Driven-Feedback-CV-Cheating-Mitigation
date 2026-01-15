@@ -40,13 +40,6 @@ export default function ViewPaymentFile({ fileName, paymentId, fileId }) {
                                     <MdOutlineFileDownload className="text-size7" />
                                 </a>
                             )}
-                            <div
-                                title="Fullscreen"
-                                className="cursor-pointer rounded-4xl p-3 -mr-3 hover-change-bg-color"
-                                onClick={toggleFullscreen}
-                            >
-                                <MdOutlineFullscreen className="text-size7" />
-                            </div>
                         </div>
                     </div>
                     <h1

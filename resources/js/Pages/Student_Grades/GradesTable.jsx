@@ -10,7 +10,7 @@ const GradesTable = () => {
             <div className="overflow-x-auto">
                 <table className="table ">
                     <thead>
-                        <tr className="border-b-2 border-ascend-gray3">
+                        <tr className="border-b-2 border-ascend-gray3 font-nunito-sans">
                             <th className="text-ascend-black font-black">
                                 Course Code
                             </th>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Programs;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Program;
+use App\Services\Programs\CourseService;
 use App\Services\Programs\GradeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -15,23 +16,35 @@ class CourseController extends Controller
 {
 
     protected GradeService $gradeService;
+    protected CourseService $courseService;
 
-    public function __construct(GradeService $gradeService)
+    public function __construct(GradeService $gradeService, CourseService $courseService)
     {
         $this->gradeService = $gradeService;
+        $this->courseService = $courseService;
     }
 
     // Create a course
-    public function store(Program $program, Request $req)
+    public function store(Program $program, Request $request)
     {
 
         // Validate user input
-        $validated = $this->validateCourse($req->all());
+        $validated = $this->validateCourse($request->all());
 
         // Add the foreign key
         $validated['program_id'] = $program->program_id;
 
-        Course::create($validated);
+        $course = Course::create($validated);
+
+        // Send  Noification
+        $title = "New Course Created";
+        $body = "The course {$course->course_name} has been successfully created by {$request->user()->first_name} {$request->user()->last_name} in the program {$program->program_name}.";
+
+        // Creates url where user can navigate the notification
+        $baseUrl = config('app.app_base_url');
+        $actionUrl = "{$baseUrl}/programs/{$program->program_id}";
+
+        $this->courseService->sendCourseNotification($request, $title, $body, $actionUrl);
 
         return back()->with('success', 'Course created successfully.');
     }
@@ -57,6 +70,16 @@ class CourseController extends Controller
 
         $course->delete();
 
+        // Send  Noification
+        $title = "Course Archived";
+        $body = "The course {$course->course_name} has been archived by {$request->user()->first_name} {$request->user()->last_name} and is no longer active in the system.";
+
+        // Creates url where user can navigate the notification
+        $baseUrl = config('app.app_base_url');
+        $actionUrl = "{$baseUrl}/archives";
+
+        $this->courseService->sendCourseNotification($request, $title, $body, $actionUrl);
+
         return to_route('program.show', $course->program)->with('success', 'Course archived successfully.');
     }
 
@@ -79,26 +102,6 @@ class CourseController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Course restored successfully.');
-    }
-
-    public function forceDeleteCourse($programId, $courseId)
-    {
-        $course = Course::withTrashed()->findOrFail($courseId);
-        $program = Program::withTrashed()->findOrFail($programId);
-
-        // Get the number of archived courses of the program
-        $numOfDeletedCourses = $program->courses()->onlyTrashed()->count();
-
-        // Check if program was archived
-        // If the number of archived courses is only 1, this mean the course to be deleted
-        // is the last in the archived program so the program has to be deleted
-        if (!is_null($program->deleted_at) && $numOfDeletedCourses ===  1) {
-            $program->forceDelete();
-        } else {
-            $course->forceDelete();
-        }
-
-        return redirect()->back()->with('success', 'Course was deleted permanently.');
     }
 
     // Show selected course

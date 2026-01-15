@@ -40,9 +40,6 @@ Route::prefix('administration')
         // Restore staff
         Route::put('staff/{id}/restore', [StaffController::class, 'restoreStaff'])->can('restoreStaff', Staff::class)->name('staff.restore');
 
-        // Restore staff
-        Route::delete('staff/{id}/force-delete', [StaffController::class, 'forceDeleteStaff'])->can('forceDeleteStaff', Staff::class)->name('staff.force.delete');
-
         // View staff details (like your old closure)
         Route::get('/{staffId}', [StaffController::class, 'administrationView'])->name('administration.view');
     });

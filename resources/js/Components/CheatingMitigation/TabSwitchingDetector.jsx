@@ -1,20 +1,33 @@
 import React, { useEffect, useState } from 'react';
+import { router } from '@inertiajs/react';
 
-const TabSwitchingDetector = () => {
+const TabSwitchingDetector = ({ enabled, assessmentSubmissionId }) => {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      const time = new Date().toLocaleTimeString();
-      const event = document.hidden 
-        ? `${time} - User switched away from tab` 
-        : `${time} - User returned to tab`;
+    if (!enabled) return;
 
-      setEvents(prev => {
-        const updated = [...prev, event];
-        console.log("Tab Events:", updated);
-        return updated;
-      });
+    const handleVisibilityChange = () => {
+      const time = new Date().toLocaleTimeString(); // Tinamad na ako mag change ng time sa laravel timestamp HAHHAHHAHA
+      const message = document.hidden 
+        ? `${time} - Student switched away from quiz` 
+        : `${time} - Student returned to the quiz`;
+
+    setEvents(prev => [...prev, message]);
+    console.log(message);
+
+      router.post(
+          route("tab-switching.store"),
+          {
+            assessment_submission_id: assessmentSubmissionId,
+            message: message, 
+          },
+          {
+            preserveScroll: true,
+            preserveState: true,
+            showProgress: false,
+          }
+        );
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -22,7 +35,7 @@ const TabSwitchingDetector = () => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [enabled]);
 
   return null; // no UI
 };

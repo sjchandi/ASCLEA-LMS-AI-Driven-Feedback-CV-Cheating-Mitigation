@@ -28,12 +28,17 @@ class PostController extends Controller
 
         $newPost = $this->postService->savePost($validatedData, $course->course_id, $request->user()->user_id);
 
+        // Send notification
+        if ($newPost->status === 'published') {
+            $this->postService->sendNewPostNotification($newPost, $course, $program);
+        }
+
         return response()->json(['success' => "Post created successfully.", 'data' => $newPost]);
     }
 
     public function getPosts(Request $request, Program $program, Course $course)
     {
-        $postList = $this->postService->listPosts($course->course_id, $request->user()->user_id);
+        $postList = $this->postService->listPosts($course->course_id, $request->user());
 
         return response()->json($postList);
     }
@@ -47,6 +52,11 @@ class PostController extends Controller
         ]);
 
         $updatedPost = $this->postService->updatePost($post, $validatedData);
+
+        // Send notification
+        if ($updatedPost->status === 'published') {
+            $this->postService->sendNewPostNotification($updatedPost, $course, $program);
+        }
 
         return response()->json(['success' => "Post updated successfully.", 'data' => $updatedPost]);
     }

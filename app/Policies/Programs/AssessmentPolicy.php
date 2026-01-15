@@ -2,6 +2,7 @@
 
 namespace App\Policies\Programs;
 
+use App\Models\Course;
 use App\Models\programs\Assessment;
 use App\Models\User;
 
@@ -21,38 +22,54 @@ class AssessmentPolicy
 
     public function viewAssessment(User $user, Assessment $assessment, string $courseId): bool
     {
-        // User can view the assessment if he is an admin and author of the assessment or the assessment was published
-        // If not admin to view the assessment the course should be assigned to the user and the author of the assessment or the assessment was published
+        // User can view the assessment if they are admin 
+        // A faculty assigned to the course
+        // A student assigned  to the course and course was published
         $isAdmin = $user->role->role_name == "admin";
-        $isAuthor = $assessment->created_by === $user->user_id;
+        $isFaculty = $user->role->role_name == "faculty";
         $isPublished = $assessment->status === "published";
         $isCourseAssigned = $user->programs()->whereHas('courses', function ($query) use ($courseId) {
             $query->where('course_id', $courseId);
         })->exists();
 
-        $isAuthorized = ($isAdmin && ($isAuthor || $isPublished)) || ($isCourseAssigned && ($isAuthor || $isPublished));
+        $isAuthorized = $isAdmin || ($isCourseAssigned && ($isFaculty || $isPublished));
 
         return $isAuthorized;
     }
 
-    public function createAssessment(User $user, string $courseId): bool
+    public function createAssessment(User $user, Course $course): bool
     {
+
         // Check if user is an admin
         // If not check whether the user is faculty and the course was assigned
-        return $user->role->role_name === 'admin' || ($user->role->role_name === 'faculty' && $user->programs()->whereHas('courses', function ($query) use ($courseId) {
-            $query->where('course_id', $courseId);
-        })->exists());
+        $isAdmin = $user->role->role_name == "admin";
+        $isFaculty = $user->role->role_name === 'faculty';
+        $isCourseAssigned = $user->programs()->whereHas('courses', function ($query) use ($course) {
+            $query->where('course_id', $course->course_id);
+        })->exists();
+
+        $isAuthorized = $isAdmin  || ($isFaculty && $isCourseAssigned);
+
+        return  $isAuthorized;
     }
 
     public function updateAssessment(User $user, Assessment $assessment): bool
     {
-        $isAuthorized = $assessment->created_by === $user->user_id;
+        $isAuthor = $assessment->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
+
+        $isAuthorized = $isAuthor || $isAdmin;
+
         return  $isAuthorized;
     }
 
     public function archiveAssessment(User $user, Assessment $assessment): bool
     {
-        $isAuthorized = $assessment->created_by === $user->user_id;
+        $isAuthor = $assessment->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
+
+        $isAuthorized = $isAuthor || $isAdmin;
+
         return  $isAuthorized;
     }
 
@@ -62,45 +79,53 @@ class AssessmentPolicy
         // is not working for soft deleted data
         $assessment = Assessment::withTrashed()->findOrFail($assessmentId);
 
-        $isAuthorized = $assessment->created_by === $user->user_id;
+        $isAuthor = $assessment->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
+
+        $isAuthorized = $isAuthor || $isAdmin;
+
         return  $isAuthorized;
     }
 
     public function accessEditQuizForm(User $user, Assessment $assessment): bool
     {
-        $isAuthorized = $assessment->created_by === $user->user_id;
+        $isAuthor = $assessment->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
+
+        $isAuthorized = $isAuthor || $isAdmin;
+
         return  $isAuthorized;
     }
 
     public function viewAssessmentFile(User $user, Assessment $assessment, string $courseId): bool
     {
-        // User can view the file if he is an admin and author of the assessment or the assessment was published
-        // If not admin to view the file the course should be assigned to the user and the author of the assessment or the assessment was published
+        // User can view the assessment if they are admin 
+        // A faculty assigned to the course
+        // A student assigned  to the course and course was published
         $isAdmin = $user->role->role_name == "admin";
-        $isAuthor = $assessment->created_by === $user->user_id;
+        $isFaculty = $user->role->role_name == "faculty";
         $isPublished = $assessment->status === "published";
         $isCourseAssigned = $user->programs()->whereHas('courses', function ($query) use ($courseId) {
             $query->where('course_id', $courseId);
         })->exists();
 
-        $isAuthorized = ($isAdmin && ($isAuthor || $isPublished)) || ($isCourseAssigned && ($isAuthor || $isPublished));
+        $isAuthorized = $isAdmin || ($isCourseAssigned && ($isFaculty || $isPublished));
 
         return $isAuthorized;
     }
 
     public function downloadAssessmentFile(User $user, Assessment $assessment, string $courseId): bool
     {
-        // User can download the file if he is an admin and author of the assessment or the assessment was published
-        // If not admin to download the file the course should be assigned to the user and userr is a faculty and the author of the assessment or the assessment was published
+        // User can download assessment file if user is an admin
+        //  Or user is a faculty and course was assigned
+
         $isAdmin = $user->role->role_name == "admin";
         $isFaculty = $user->role->role_name == "faculty";
-        $isAuthor = $assessment->created_by === $user->user_id;
-        $isPublished = $assessment->status === "published";
         $isCourseAssigned = $user->programs()->whereHas('courses', function ($query) use ($courseId) {
             $query->where('course_id', $courseId);
         })->exists();
 
-        $isAuthorized = ($isAdmin && ($isAuthor || $isPublished)) || ($isFaculty && $isCourseAssigned && ($isAuthor || $isPublished));
+        $isAuthorized = $isAdmin || ($isFaculty && $isCourseAssigned);
 
         return $isAuthorized;
     }
@@ -126,6 +151,16 @@ class AssessmentPolicy
     }
 
     public function downloadAssessmentResponsesData(User $user, Assessment $assessment): bool
+    {
+        $isAdmin = $user->role->role_name == "admin";
+        $isAuthor = $assessment->created_by === $user->user_id;
+
+        $isAuthorized = $isAdmin || $isAuthor;
+
+        return $isAuthorized;
+    }
+
+    public function  resetAssessment(User $user, Assessment $assessment): bool
     {
         $isAdmin = $user->role->role_name == "admin";
         $isAuthor = $assessment->created_by === $user->user_id;

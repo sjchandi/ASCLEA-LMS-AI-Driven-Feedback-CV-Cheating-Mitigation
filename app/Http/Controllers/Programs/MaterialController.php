@@ -13,7 +13,9 @@ use App\Services\Programs\MaterialService;
 use App\Services\Programs\SectionItemService;
 use App\Services\Programs\SectionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Throwable;
 
 class MaterialController extends Controller
 {
@@ -34,30 +36,37 @@ class MaterialController extends Controller
         $validatedData['course_id'] = $course->course_id;
         $validatedData['created_by'] = $request->user()->user_id;
 
-        // Save the materials data in the table
-        $material = Material::create($validatedData);
+        // DB rollback when one of db transaction failed
+        return DB::transaction(function () use ($request, $validatedData, $course, $program) {
+            // Save the materials data in the table
+            $material = Material::create($validatedData);
 
-        // Save the files in file storage and table if it has value
-        if ($request->hasFile("material_files")) {
-            $this->materialService->saveMaterialFiles($request->material_files, $material);
-        }
+            // Save the files in file storage and table if it has value
+            if ($request->hasFile("material_files")) {
+                $this->materialService->saveMaterialFiles($request->material_files, $material);
+            }
 
-        if (array_key_exists('section_id', $validatedData) && !is_null($validatedData['section_id'])) {
-            $sectionItem = $this->sectionItemService->createSectionItem($validatedData['section_id'], $material->material_id, Material::class);
+            if (array_key_exists('section_id', $validatedData) && !is_null($validatedData['section_id'])) {
+                $sectionItem = $this->sectionItemService->createSectionItem($validatedData['section_id'], $material->material_id, Material::class);
 
-            // Return the section item with material details
-            return response()->json(['success' => "Material added in section successfully.", 'data' => $sectionItem]);
-        } else {
+                // Return the section item with material details
+                return response()->json(['success' => "Material added in section successfully.", 'data' => $sectionItem]);
+            }
+
+            if ($material->status === "published") {
+                $this->materialService->sendMaterialNotification($material, $course, $program);
+            }
+
             // Return here the material details
             $materialCompleteDetails = $this->materialService->getmaterialCompleteDetails($material);
 
             return response()->json(['success' => "Material added successfully.", 'data' => $materialCompleteDetails]);
-        }
+        });
     }
 
     public function getMaterials(Request $request, Program $program, Course $course)
     {
-        $materialList = $this->materialService->getMaterialList($request->user()->user_id, $course->course_id);
+        $materialList = $this->materialService->getMaterialList($request->user(), $course->course_id);
 
         return response()->json($materialList);
     }
@@ -66,26 +75,33 @@ class MaterialController extends Controller
     {
         $validatedMaterialData = $request->validated();
 
-        $upatedMaterial = $this->materialService->updateMaterial($material, $validatedMaterialData);
+        // DB rollback when one of db transaction failed
+        return DB::transaction(function () use ($request, $validatedMaterialData, $material, $course, $program) {
+            $upatedMaterial = $this->materialService->updateMaterial($material, $validatedMaterialData);
 
-        if (!empty($request->removed_files)) {
-            $this->materialService->removeMaterialFiles($request->removed_files);
-        }
+            if (!empty($request->removed_files)) {
+                $this->materialService->removeMaterialFiles($request->removed_files);
+            }
 
-        if ($request->has("material_files")) {
-            $this->materialService->saveMaterialFiles($validatedMaterialData['material_files'], $upatedMaterial);
-        }
+            if ($request->has("material_files")) {
+                $this->materialService->saveMaterialFiles($validatedMaterialData['material_files'], $upatedMaterial);
+            }
 
-        if (array_key_exists('section_id', $validatedMaterialData) && !is_null($validatedMaterialData['section_id'])) {
-            $sectionItem = $this->sectionItemService->updateSectionItem($upatedMaterial->sectionItem);
+            if (array_key_exists('section_id', $validatedMaterialData) && !is_null($validatedMaterialData['section_id'])) {
+                $sectionItem = $this->sectionItemService->updateSectionItem($upatedMaterial->sectionItem);
 
-            // Return the section item with material details
-            return response()->json(['success' => "Material added in section successfully.", 'data' => $sectionItem]);
-        } else {
+                // Return the section item with material details
+                return response()->json(['success' => "Material added in section successfully.", 'data' => $sectionItem]);
+            }
+
+            if ($material->status === "published") {
+                $this->materialService->sendMaterialNotification($material, $course, $program);
+            }
+
             $materialCompleteDetails = $this->materialService->getmaterialCompleteDetails($upatedMaterial);
 
             return response()->json(['success' => "Material updated sucessfully.", 'data' => $materialCompleteDetails]);
-        }
+        });
     }
 
     public function unpublishMaterial(Program $program, Course $course, Material $material)
@@ -102,7 +118,10 @@ class MaterialController extends Controller
     {
         $archivedMaterial = $this->materialService->archiveMaterial($material);
 
-        return response()->json(["success" => "Material archived successfully.", "data" => $archivedMaterial]);
+        return response()->json([
+            "success" => "Material " . ($material->sectionItem ? 'deleted' : 'archived') . " successfully.",
+            "data" => $archivedMaterial
+        ]);
     }
 
     public function restoreMaterial(Program $program, Course $course, $material)

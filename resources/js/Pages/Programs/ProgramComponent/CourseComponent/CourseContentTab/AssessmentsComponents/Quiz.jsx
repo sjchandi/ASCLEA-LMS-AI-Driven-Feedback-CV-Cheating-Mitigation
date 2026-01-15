@@ -21,7 +21,10 @@ export default function Quiz({ asssessment, quizDetails }) {
                     quiz: quizDetails.quiz_id,
                 })
             );
-        } else if (auth.user.user_id === asssessment.created_by) {
+        } else if (
+            auth.user.user_id === asssessment.created_by ||
+            auth.user.role_name === "admin"
+        ) {
             router.visit(
                 route("assessment.quiz-form.edit", {
                     assessment: quizDetails.assessment_id,
@@ -36,7 +39,8 @@ export default function Quiz({ asssessment, quizDetails }) {
             onClick={handleQuizClick}
             className={`flex h-15 items-center space-x-4 p-2 border border-ascend-gray1 bg-ascend-white ${
                 auth.user.role_name === "student" ||
-                auth.user.user_id === asssessment.created_by
+                auth.user.user_id === asssessment.created_by ||
+                auth.user.role_name === "admin"
                     ? "hover-change-bg-color cursor-pointer"
                     : ""
             }`}

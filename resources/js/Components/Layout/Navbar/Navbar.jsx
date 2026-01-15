@@ -3,6 +3,7 @@ import { MdNotifications } from "react-icons/md";
 import { usePage } from "@inertiajs/react";
 import ProfileDropdown from "../Navbar/ProfileDropdown";
 import NotifDropdown from "./NotifDropdown";
+import useNotificationStore from "../../../Stores/Notification/notificationStore";
 
 export default function Navbar({ setIsSidebarOpen, isMdScreen }) {
     const { url } = usePage();
@@ -15,9 +16,23 @@ export default function Navbar({ setIsSidebarOpen, isMdScreen }) {
     const notifRef = useRef(null);
     const profileRef = useRef(null);
 
+    const isThereNewNotif = useNotificationStore(
+        (state) => state.isThereNewNotif
+    );
+    const setIsThereNewNotif = useNotificationStore(
+        (state) => state.setIsThereNewNotif
+    );
+    const numOfUnreadNotifications = useNotificationStore(
+        (state) => state.numOfUnreadNotifications
+    );
+    const setNumOfUnreadNotifications = useNotificationStore(
+        (state) => state.setNumOfUnreadNotifications
+    );
+
     // Set the dropdown to be displayed when clicked
     const openDropdown = (dropdown) => {
         setDropdown((prev) => (dropdown === prev ? "" : dropdown));
+        setIsThereNewNotif(false);
     };
 
     // Open sidebar
@@ -40,8 +55,13 @@ export default function Navbar({ setIsSidebarOpen, isMdScreen }) {
             setPageTitle("Archives");
         } else if (url.includes("/grades")) {
             setPageTitle("Grades");
-        } else if (url.includes("/payment-history")) {
+        } else if (
+            url.includes("/payment-history") ||
+            url.includes("/student-payment-history")
+        ) {
             setPageTitle("Payment History");
+        } else if (url.includes("/backup-and-restore")) {
+            setPageTitle("Backup and Restore");
         } else {
             setPageTitle("");
         }
@@ -60,6 +80,10 @@ export default function Navbar({ setIsSidebarOpen, isMdScreen }) {
         }
 
         document.addEventListener("mousedown", handleClickOutside);
+
+        // Set the count of unread notifications
+        setNumOfUnreadNotifications(auth.user.unread_notifications);
+
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
@@ -90,10 +114,24 @@ export default function Navbar({ setIsSidebarOpen, isMdScreen }) {
                 <div
                     ref={notifRef}
                     onClick={() => openDropdown("notif")}
-                    className="hover:bg-ascend-lightblue p-3 rounded-[50px] cursor-pointer relative transition-hover duration-300"
+                    className="group hover:bg-ascend-lightblue p-3 rounded-[50px] cursor-pointer relative transition-hover duration-300"
                 >
-                    <div className=" h-[10px] w-[10px] border rounded-xl bg-ascend-blue absolute right-[15px] top-4 border-ascend-white"></div>
-                    <MdNotifications className="text-size6" />
+                    {(isThereNewNotif || numOfUnreadNotifications > 0) && (
+                        <div
+                            className={`rounded-full px-[6px] flex justify-center items-center bg-ascend-blue absolute   ${
+                                numOfUnreadNotifications > 9
+                                    ? " right-1"
+                                    : " right-2"
+                            }
+                                 top-3 border-ascend-white text-ascend-white text-size1`}
+                        >
+                            {numOfUnreadNotifications > 9
+                                ? "9+"
+                                : numOfUnreadNotifications}
+                        </div>
+                    )}
+
+                    <MdNotifications className="text-size7 group-hover:text-ascend-blue" />
                 </div>
 
                 {auth.user.profile_image ? (
@@ -120,7 +158,9 @@ export default function Navbar({ setIsSidebarOpen, isMdScreen }) {
             </div>
 
             {/* Dropdown */}
-            {dropDown === "notif" && <NotifDropdown ref={dropdownRef} />}
+            {dropDown === "notif" && (
+                <NotifDropdown setDropdown={setDropdown} ref={dropdownRef} />
+            )}
             {dropDown === "profile" && (
                 <ProfileDropdown setDropdown={setDropdown} ref={dropdownRef} />
             )}

@@ -35,10 +35,6 @@ export default function Archives() {
         );
     };
 
-    useEffect(() => {
-        console.log(activeTab);
-    }, [activeTab]);
-
     return (
         <div className="space-y-5">
             <div className="h-12 -mt-2 sm:-mt-5 border-b border-ascend-gray1 w-full py-1 flex sm:justify-center items-center overflow-x-auto space-x-1 font-nunito-sans text-ascend-black">

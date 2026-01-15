@@ -1,19 +1,16 @@
-import React from "react";
+import { useState } from "react";
 import PrimaryButton from "../../../Components/Button/PrimaryButton";
 import { formatFullDate } from "../../../Utils/formatFullDate";
-import { getRemainingDays } from "../../../Utils/getRemainingDays";
 import ProfileImage from "../../../Components/ProfileImage";
 
 export default function ArchivedStudentRow({
     student,
     setStudentId,
     setOpenAlertModal,
-    setAction,
 }) {
-    const handleActionClick = (action) => {
+    const handleActionClick = () => {
         setOpenAlertModal(true);
         setStudentId(student.student_id);
-        setAction(action);
     };
     return (
         <tr className="hover:bg-ascend-lightblue">
@@ -32,17 +29,11 @@ export default function ArchivedStudentRow({
                     : "N/A"}
             </td>
             <td>{formatFullDate(student.deleted_at)}</td>
-            <td>{getRemainingDays(student.deleted_at, 30)}d</td>
             <td className="flex gap-2">
                 <PrimaryButton
                     text={"Restore"}
                     btnColor={"bg-ascend-yellow"}
-                    doSomething={() => handleActionClick("restore")}
-                />
-                <PrimaryButton
-                    text={"Delete"}
-                    btnColor={"bg-ascend-red"}
-                    doSomething={() => handleActionClick("delete")}
+                    doSomething={handleActionClick}
                 />
             </td>
         </tr>

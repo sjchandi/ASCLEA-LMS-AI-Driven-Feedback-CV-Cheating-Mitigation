@@ -17,7 +17,7 @@ export default function SectionList() {
         programId: program.program_id,
         courseId: course.course_id,
     });
-
+    console.log(sectionsByCourse);
     const loaderRef = useRef(null);
 
     const handleObserver = useCallback(

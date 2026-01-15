@@ -16,7 +16,7 @@ export default function AlertModal({
             onClick={closeModal}
             className={`fixed inset-0 h-screen ${
                 nested ? "bg-black/50" : "bg-black/25"
-            } z-200 flex items-center justify-center overflow-y-auto`}
+            } z-999 flex items-center justify-center overflow-y-auto`}
         >
             <div className="my-auto py-5">
                 <div

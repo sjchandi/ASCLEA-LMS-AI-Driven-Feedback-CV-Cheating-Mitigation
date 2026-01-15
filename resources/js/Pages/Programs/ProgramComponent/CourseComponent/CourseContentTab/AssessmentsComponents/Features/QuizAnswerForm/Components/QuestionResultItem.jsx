@@ -11,6 +11,8 @@ export default function QuestionResultItem({
     questionDetails,
     user,
     assessment,
+    index,
+    currentPage = 1,
 }) {
     const [isAnswerCorrect, setIsAnswerCorrect] = useState(true);
     const [hasCorrectOption, setHasCorrectOption] = useState(false);
@@ -56,7 +58,13 @@ export default function QuestionResultItem({
             }
         }
     }, [questionDetails]);
-    // console.log(questionDetails);
+
+    // Caculate the question number
+    // This is for when qquestions was randomized since we cant use
+    // the question sort_order value
+    const pageSize = 10;
+    const questioNumber = pageSize * (currentPage - 1) + index + 1;
+
     return (
         <div className="p-5 shadow-shadow1 border border-ascend-gray1 space-y-5">
             {hasCorrectOption &&
@@ -100,7 +108,7 @@ export default function QuestionResultItem({
                     </div>
                 ))}
             <div className="flex">
-                {`${questionDetails.sort_order}.`}
+                {`${questioNumber}.`}
                 <div className="w-full min-w-0 ml-2 space-y-5">
                     <div className="flex items-start gap-2 md:gap-20">
                         <p className="flex-1 min-w-0 break-words">
@@ -184,20 +192,19 @@ export default function QuestionResultItem({
 
             <RoleGuard allowedRoles={["student"]}>
                 <>
-                    {questionDetails.question_type === "identification" &&
-                        isAnswerCorrect && (
-                            <div className="flex flex-wrap">
-                                <h1 className="mr-2 font-bold text-ascend-green">
-                                    Correct answers:
-                                </h1>
-                                <p>
-                                    {questionDetails.options
-                                        .filter((option) => option.is_correct)
-                                        .map((option) => option.option_text)
-                                        .join(", ")}
-                                </p>
-                            </div>
-                        )}
+                    {questionDetails.question_type === "identification" && (
+                        <div className="flex flex-wrap">
+                            <h1 className="mr-2 font-bold text-ascend-green">
+                                Correct answers:
+                            </h1>
+                            <p>
+                                {questionDetails.options
+                                    .filter((option) => option.is_correct)
+                                    .map((option) => option.option_text)
+                                    .join(", ")}
+                            </p>
+                        </div>
+                    )}
 
                     {!feedback && questionDetails.student_answer && (
                         <div className="flex justify-end">

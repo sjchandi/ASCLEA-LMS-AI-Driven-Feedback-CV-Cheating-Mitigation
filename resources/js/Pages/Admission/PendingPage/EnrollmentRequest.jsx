@@ -53,7 +53,7 @@ const EnrollmentRequest = () => {
         <BackButton doSomething={() => window.history.back()} />
         <div className="flex space-x-3">
           
-          {student.admission_status === "Rejected" ? (
+          {student.admission_status === "Rejected" || student.admission_status === "Not Submitted"  ? (
             <PrimaryButton
               text="Reject"
               btnColor="bg-ascend-gray1"

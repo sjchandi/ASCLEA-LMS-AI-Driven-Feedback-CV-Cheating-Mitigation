@@ -11,6 +11,7 @@ import debounce from "lodash.debounce";
 import DefaultCustomToast from "../../../../Components/CustomToast/DefaultCustomToast";
 import { displayToast } from "../../../../Utils/displayToast";
 import ModalContainer from "../../../../Components/ModalContainer";
+import ProfileImage from "../../../../Components/ProfileImage";
 
 export default function AddMemberForm({ toggleModal }) {
     const { program } = usePage().props;
@@ -263,21 +264,15 @@ export default function AddMemberForm({ toggleModal }) {
                                     checked={selectedUsers.some(
                                         (id) => id === user.user_id
                                     )}
-                                    className="accent-ascend-blue w-4 h-4"
+                                    className="accent-ascend-blue w-4 h-4 mr-5"
                                     onChange={() =>
                                         handleAddNewMemberChange(user.user_id)
                                     }
                                 />
 
-                                <img
-                                    src={
-                                        user.profile_image &&
-                                        `/storage/${user.profile_image}`
-                                    }
-                                    alt="Profile image"
-                                    className="w-12 h-12 shrink-0 bg-ascend-gray1/20 rounded-4xl ml-5 mr-3 object-cover"
-                                ></img>
-                                <div>
+                                <ProfileImage userData={user} />
+
+                                <div className="ml-3">
                                     <div className="flex flex-col">
                                         <span className="font-semibold">
                                             {`${user.first_name} ${user.last_name}`}

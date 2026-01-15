@@ -86,6 +86,22 @@ export default function QuizFormNav() {
                                     Show answers after
                                 </span>
                             </div>
+                            <div className="flex space-x-3">
+                                <input
+                                    type="checkbox"
+                                    checked={quizDetails.randomize}
+                                    onChange={(e) =>
+                                        handleQuizDetailsChange(
+                                            "randomize",
+                                            quizDetails.randomize ? false : true
+                                        )
+                                    }
+                                    className="toggle toggle-md border-ascend-blue bg-ascend-white checked:border-ascend-blue checked:bg-ascend-blue checked:text-ascend-white"
+                                />
+                                <span className="text-size2 text-nowrap text-ascend-black font-bold">
+                                    Randomize questions
+                                </span>
+                            </div>
                             <div className="flex flex-col">
                                 <div className="flex space-x-3">
                                     <input

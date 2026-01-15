@@ -6,13 +6,21 @@ import { displayToast } from '../../../Utils/displayToast';
 import DefaultCustomToast from '../../../Components/CustomToast/DefaultCustomToast';
 
 export default function RejectionModal({ toggleModal }) {
-    console.log("Render Reject Modal Form");
+  console.log("Render Reject Modal Form");
 
   const { student } = usePage().props;
   const [message, setMessage] = useState("");
 
   const handleReject = (e) => {
     e.preventDefault();
+
+    if (message.trim() === "") {
+      displayToast(
+        <DefaultCustomToast message="Rejection message cannot be empty." />,
+        "error"
+      );
+      return;
+    }
 
     router.put(
       route("admission.updateStatus", student.student_id),

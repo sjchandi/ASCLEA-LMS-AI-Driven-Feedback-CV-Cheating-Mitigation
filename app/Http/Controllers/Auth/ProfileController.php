@@ -43,8 +43,6 @@ class ProfileController extends Controller
 
         // Base fields everyone can update
         $validated = $request->validate([
-            'phone'      => 'nullable|string|max:20',
-            'email'      => 'required|email|unique:users,email,' . $user->user_id . ',user_id',
             'houseNoSt'  => 'nullable|string|max:255',
             'region'     => 'nullable|string|max:255',
             'province'   => 'nullable|string|max:255',
@@ -60,6 +58,8 @@ class ProfileController extends Controller
                 'middleName' => 'nullable|string|max:255',
                 'birthday'   => 'nullable|date',
                 'gender'     => 'required|in:male,female',
+                'phone'      => 'nullable|string|max:20',
+                'email'      => 'required|email|unique:users,email,' . $user->user_id . ',user_id',
             ]);
             $validated = array_merge($validated, $adminValidated);
         }
@@ -72,7 +72,7 @@ class ProfileController extends Controller
             'birthdate'      => $validated['birthday'] ?? $user->birthdate,
             'gender'         => $validated['gender'] ?? $user->gender,
             'contact_number' => $validated['phone'] ?? $user->contact_number,
-            'email'          => $validated['email'],
+            'email'          => $validated['email'] ?? $user->email,
             'house_no'       => $validated['houseNoSt'] ?? $user->house_no,
             'region'         => $validated['region'] ?? $user->region,
             'province'       => $validated['province'] ?? $user->province,

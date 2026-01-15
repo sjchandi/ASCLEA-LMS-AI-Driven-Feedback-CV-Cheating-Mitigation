@@ -2,13 +2,24 @@
 
 namespace App\Services\Programs;
 
+use App\Models\Course;
+use App\Models\Program;
 use App\Models\Programs\Assessment;
 use App\Models\Programs\Material;
 use App\Models\Programs\Section;
+use App\Models\Programs\SectionItem;
 use App\Models\User;
+use App\Services\NotificationService;
 
 class SectionService
 {
+    protected NotificationService $notificationService;
+
+    public function __construct(NotificationService $notoficationService)
+    {
+        $this->notificationService = $notoficationService;
+    }
+
     public function getSectionCompleteDetails(Section $section)
     {
         return $section->load(
@@ -69,17 +80,12 @@ class SectionService
                     $query->where('assigned_course_id', $assignedCourseId);
                 },
             ])
-            ->where(function ($query) use ($user) {
-                // Display section added by the user or section that was publsiehd
-                $query->where('created_by', $user->user_id)
-                    ->orWhere('status', 'published');
-            })
             ->withTrashed()
-            ->where(function ($query) use ($user) {
-                // Display not deleted sections or if deleted the user  must be the owmner
-                $query->whereNull('deleted_at')
-                    ->orWhere('created_by', $user->user_id);
+            ->when(in_array($user->role->role_name, ['student', 'faculty']), function ($q) {
+                $q->where('status', 'published')
+                    ->whereNull('deleted_at');
             })
+            ->whereNull('permanently_deleted_at')
             ->orderBy('created_at', $userRole === 'admin' ? 'desc' : 'asc')
             ->orderBy('section_id', 'desc')
             ->paginate(5)
@@ -159,6 +165,15 @@ class SectionService
 
     public function archiveSection(Section $section)
     {
+        // Sofft delete first the items of the section
+        $sectionItems = $section->items;
+
+        if (!$sectionItems->isEmpty()) {
+            foreach ($sectionItems  as $sectionItem) {
+                $sectionItem->item->delete();
+            }
+        }
+
         $section->delete(); // Soft delete the section
 
         return  $this->getSectionCompleteDetails($section);
@@ -169,6 +184,15 @@ class SectionService
         // Get the instace of model since model binding
         // is not working for soft deleted data
         $section = Section::withTrashed()->findOrFail($sectionId);
+
+        // Restore first the deleted items of the section (Materials and Assessments)
+        $sectionItems = $section->items;
+
+        if (!$sectionItems->isEmpty()) {
+            foreach ($sectionItems  as $sectionItem) {
+                $sectionItem->item->restore();
+            }
+        }
 
         $section->restore();
 
@@ -190,5 +214,32 @@ class SectionService
             ->first();
 
         return $assignedCourseId;
+    }
+
+    public function getUsersToNotify($courseId)
+    {
+        $users = User::where(function ($query) use ($courseId) {
+            $query->whereHas('programs.courses', function ($q) use ($courseId) {
+                $q->where('course_id', $courseId);
+            })
+                ->orWhereHas('role', function ($q) {
+                    $q->where('role_name', 'admin');
+                });
+        })
+            ->where('user_id', '!=', request()->user()->user_id)
+            ->pluck('user_id')
+            ->toArray();
+
+        return $users;
+    }
+
+    public function sendSectionNotification(Section $section, Course $course)
+    {
+        $users = $this->getUsersToNotify($course->course_id);
+
+        $title = "New section available";
+        $body = "A new section {$section->section_title} is now available in {$course->course_name}.";
+
+        $this->notificationService->notifyUsers($users, $title, $body);
     }
 }

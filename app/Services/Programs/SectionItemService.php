@@ -82,4 +82,12 @@ class SectionItemService
                 ->increment('order');
         }
     }
+
+    // Decrement the order of the folllowing items after an item was deleted
+    public function decrementSectionItems(SectionItem $sectionItem)
+    {
+        SectionItem::where('section_id',  $sectionItem->section_id)
+            ->where('order', ">", $sectionItem->order)
+            ->decrement('order');
+    }
 }

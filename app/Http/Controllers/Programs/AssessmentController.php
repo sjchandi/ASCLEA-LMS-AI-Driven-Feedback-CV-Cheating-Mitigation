@@ -9,12 +9,14 @@ use App\Models\Program;
 use App\Models\Programs\Assessment;
 use App\Models\Programs\AssessmentFile;
 use App\Services\HandlingPrivateFileService;
+use App\Services\NotificationService;
 use App\Services\Programs\AssessmentResponseService;
 use App\Services\Programs\AssessmentService;
 use App\Services\Programs\AssessmentSubmissionService;
 use App\Services\Programs\SectionItemService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 
@@ -33,34 +35,40 @@ class AssessmentController extends Controller
         $this->sectionItemService = $sectionItemService;
     }
 
-    public function createAssessment(SaveAssessmentRequest $req, $program, $course)
+    public function createAssessment(SaveAssessmentRequest $req, Program $program, Course $course)
     {
         $validatedAssessment = $req->validated();
 
-        $assessment = $this->assessmentService->saveAssessment($validatedAssessment, $course);
+        return DB::transaction(function () use ($req, $validatedAssessment, $course, $program) {
+            $assessment = $this->assessmentService->saveAssessment($validatedAssessment, $course->course_id);
 
-        // Call 2 different methods for handling each assessment type
-        if ($req->hasFile("assessment_files")) {
-            $this->assessmentService->saveAssessmentFiles($req->assessment_files, $assessment);
-        }
+            // Call 2 different methods for handling each assessment type
+            if ($req->hasFile("assessment_files")) {
+                $this->assessmentService->saveAssessmentFiles($req->assessment_files, $assessment);
+            }
 
-        if ($req->assessment_type === "quiz") {
-            $this->assessmentService->createInitialQuizForm($assessment);
-        }
+            if ($req->assessment_type === "quiz") {
+                $this->assessmentService->createInitialQuizForm($assessment);
+            }
 
-        // If assesssment was created through section, crerate a data for section item tables
-        if (array_key_exists('section_id', $validatedAssessment) && !is_null($validatedAssessment['section_id'])) {
+            // If assesssment was created through section, crerate a data for section item tables
+            if (array_key_exists('section_id', $validatedAssessment) && !is_null($validatedAssessment['section_id'])) {
 
-            $sectionItem = $this->sectionItemService->createSectionItem($validatedAssessment['section_id'], $assessment->assessment_id, Assessment::class);
+                $sectionItem = $this->sectionItemService->createSectionItem($validatedAssessment['section_id'], $assessment->assessment_id, Assessment::class);
 
-            // Return the section item with material details
-            return response()->json(['success' => "Material added in section successfully.", 'data' => $sectionItem]);
-        } else {
+                // Return the section item with material details
+                return response()->json(['success' => "Assessment added in section successfully.", 'data' => $sectionItem]);
+            }
+
+            // Send notifications
+            if ($assessment->status === "published") {
+                $this->assessmentService->sendAssessmentNotification($assessment, $course, $program);
+            }
 
             $assessmentCompleteDetails = $this->assessmentService->getAssessmentCompleteDetails($assessment);
 
             return response()->json(['success' => "Assessment created successfully.", 'data' => $assessmentCompleteDetails]);
-        }
+        });
     }
 
     public function listAssessments($program, $course)
@@ -70,34 +78,40 @@ class AssessmentController extends Controller
         return response()->json($assessments);
     }
 
-    public function updateAssessment(SaveAssessmentRequest $req, $program, $course, Assessment $assessment)
+    public function updateAssessment(SaveAssessmentRequest $req, Program $program, Course $course, Assessment $assessment)
     {
         $validatedUpdatedAssessment = $req->validated();
+        return DB::transaction(function () use ($req, $validatedUpdatedAssessment, $course, $program, $assessment) {
+            $updatedAssessment = $this->assessmentService->updateAssessment($assessment, $validatedUpdatedAssessment);
 
-        $updatedAssessment = $this->assessmentService->updateAssessment($assessment, $validatedUpdatedAssessment);
+            if (!empty($req->removed_files)) {
+                $this->assessmentService->removeAssessmentFiiles($req->removed_files);
+            }
 
-        if (!empty($req->removed_files)) {
-            $this->assessmentService->removeAssessmentFiiles($req->removed_files);
-        }
+            if ($req->hasFile("assessment_files")) {
+                $this->assessmentService->saveAssessmentFiles($req->assessment_files, $updatedAssessment);
+            }
 
-        if ($req->hasFile("assessment_files")) {
-            $this->assessmentService->saveAssessmentFiles($req->assessment_files, $updatedAssessment);
-        }
+            if ($req->assessment_type === "quiz") {
+                $this->assessmentService->createInitialQuizForm($updatedAssessment);
+            }
 
-        if ($req->assessment_type === "quiz") {
-            $this->assessmentService->createInitialQuizForm($updatedAssessment);
-        }
+            if (array_key_exists('section_id', $validatedUpdatedAssessment) && !is_null($validatedUpdatedAssessment['section_id'])) {
+                $sectionItem = $this->sectionItemService->updateSectionItem($updatedAssessment->sectionItem);
 
-        if (array_key_exists('section_id', $validatedUpdatedAssessment) && !is_null($validatedUpdatedAssessment['section_id'])) {
-            $sectionItem = $this->sectionItemService->updateSectionItem($updatedAssessment->sectionItem);
+                // Return the section item with material details
+                return response()->json(['success' => "Material added in section successfully.", 'data' => $sectionItem]);
+            }
 
-            // Return the section item with material details
-            return response()->json(['success' => "Material added in section successfully.", 'data' => $sectionItem]);
-        } else {
+            // Send notifications
+            if ($assessment->status === "published") {
+                $this->assessmentService->sendAssessmentNotification($assessment, $course, $program);
+            }
+
             $updatedAssessmentData = $this->assessmentService->getAssessmentCompleteDetails($updatedAssessment);
 
             return response()->json(['success' => "Assessment updated sucessfully.", 'data' => $updatedAssessmentData]);
-        }
+        });
     }
 
     // Independent controller that handle unpublishing of assessment
@@ -117,7 +131,7 @@ class AssessmentController extends Controller
     {
         $archivedAssessment = $this->assessmentService->archiveAssessment($assessment);
 
-        return response()->json(["success" => "Assessment archived successfully.", "archivedAssessment" => $archivedAssessment]);
+        return response()->json(["success" => "Assessment " .  ($assessment->sectionItem ? "deleted" : "archived") .  " successfully.", "data" => $archivedAssessment]);
     }
 
     public function restoreAssessment($program, $course,  $assessment)
@@ -265,5 +279,12 @@ class AssessmentController extends Controller
         $callback = $this->assessmentResponseService->handleExportQuizResponsesToCsv($responses, $assessment, $summary, $frequentlyMissedQuestions, $feedback);
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function resetAssessment(Program $program, Course $course, Assessment $assessment)
+    {
+        $this->assessmentResponseService->deleteAssessmentSubmissions($assessment);
+
+        return back()->with('success', "Assessment reset sucessfully.");
     }
 }

@@ -349,16 +349,6 @@ class StaffController extends Controller
         return redirect()->back()->with('success', 'Staff restored successfully.');
     }
 
-    public function forceDeleteStaff($staffId)
-    {
-        $staff = Staff::withTrashed()->findOrFail($staffId);
-
-        $staff->forceDelete();
-        $staff->user->forceDelete();
-
-        return redirect()->back()->with('success', 'Staff deleted permanently.');
-    }
-
     public function updateProfile(Request $request, $id)
     {
         $this->checkAdmin();

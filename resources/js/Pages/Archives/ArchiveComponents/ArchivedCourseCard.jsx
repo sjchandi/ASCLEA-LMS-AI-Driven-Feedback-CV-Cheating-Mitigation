@@ -14,58 +14,34 @@ export default function ArchivedCourseCard({ courseData }) {
     const [action, setAction] = useState(null);
 
     // Custom hook
-    const { isLoading, handleRestoreCourse, handleForceDeleteCourse } =
-        useArchive();
+    const { isLoading, handleRestoreCourse } = useArchive();
 
     const toggleExpanded = (e) => {
         e.stopPropagation();
         setIsExpanded(!isExpanded);
     };
 
-    const handleActionClick = (action) => {
-        setAction(action);
-        setOpenAlertModal(true);
-    };
-
-    useEffect(() => {
-        console.log(action);
-        console.log(openAlerModal);
-    }, [openAlerModal, action]);
-
     return (
         <>
             {/* Display alert modal */}
             {openAlerModal && (
                 <AlertModal
-                    title={
-                        action === "restore"
-                            ? "Restore Course"
-                            : "Permanently Delete Course"
-                    }
+                    title={"Restore Course"}
                     description={
-                        action === "restore"
-                            ? "Are you sure you want to restore this course?"
-                            : "Are you sure you want to permanently delete this course? This action cannot be undone."
+                        "Are you sure you want to restore this course?"
                     }
                     closeModal={() => setOpenAlertModal(false)}
-                    onConfirm={() => {
-                        if (action === "restore") {
-                            handleRestoreCourse(
-                                courseData.program.program_id,
-                                courseData.course_id
-                            );
-                        } else {
-                            handleForceDeleteCourse(
-                                courseData.program.program_id,
-                                courseData.course_id
-                            );
-                        }
-                    }}
+                    onConfirm={() =>
+                        handleRestoreCourse(
+                            courseData.program.program_id,
+                            courseData.course_id
+                        )
+                    }
                     isLoading={isLoading}
                 />
             )}
 
-            <div className="w-full max-w-100 h-full border border-ascend-gray1 shadow-shadow1 p-5 cursor-pointer space-y-4 card-hover">
+            <div className="w-full max-w-100 h-full border border-ascend-gray1 shadow-shadow1 p-5 space-y-4 card-hover">
                 <div className="flex items-start space-x-5 w-full">
                     <div className="p-2 rounded-[100px] bg-ascend-lightblue">
                         <PiNotebookFill className="text-5xl text-ascend-blue" />
@@ -84,7 +60,7 @@ export default function ArchivedCourseCard({ courseData }) {
                             {courseData.course_name}
                         </h1>
                         <span className="font-semibold">
-                            Pogram: {courseData.program.program_name}
+                            Program: {courseData.program.program_name}
                         </span>
                         {courseData.course_description && (
                             <p className="text-size1 mt-2">
@@ -116,10 +92,10 @@ export default function ArchivedCourseCard({ courseData }) {
                     </div>
                 </div>
 
-                <div className="flex  items-center">
+                <div className="flex  items-center gap-5">
                     <div className="flex flex-wrap justify-between items-center space-x-5">
                         <span className="text-size1">
-                            Arhived on {formatFullDate(courseData.deleted_at)}
+                            Archived on {formatFullDate(courseData.deleted_at)}
                         </span>
                         <span className="text-size1">
                             Archived by{" "}
@@ -130,23 +106,11 @@ export default function ArchivedCourseCard({ courseData }) {
                                 : "N/A"}
                         </span>
                     </div>
-                    <div>
-                        <span className="text-size1 font-bold">
-                            Permanently deletes in{" "}
-                            {getRemainingDays(courseData.deleted_at, 30)}d
-                        </span>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-2">
+
                     <PrimaryButton
                         text={"Restore"}
                         btnColor={"bg-ascend-yellow"}
-                        doSomething={() => handleActionClick("restore")}
-                    />
-                    <PrimaryButton
-                        text={"Delete"}
-                        btnColor={"bg-ascend-red"}
-                        doSomething={() => handleActionClick("delete")}
+                        doSomething={() => setOpenAlertModal(true)}
                     />
                 </div>
             </div>

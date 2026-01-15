@@ -3,10 +3,13 @@
 namespace App\Services\Programs;
 
 use App\Models\Course;
+use App\Models\Program;
 use App\Models\Programs\Assessment;
 use App\Models\Programs\AssessmentFile;
 use App\Models\Programs\AssessmentType;
 use App\Models\Programs\Quiz;
+use App\Models\User;
+use App\Services\NotificationService;
 use App\Services\PdfConverter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +18,17 @@ use Illuminate\Support\Facades\Storage;
 
 class AssessmentService
 {
+
+    protected SectionService $sectionService;
+    protected SectionItemService $sectionItemService;
+    protected NotificationService $notificationService;
+
+    public function __construct(SectionService $sectionService, SectionItemService $sectionItemService, NotificationService $notificationService)
+    {
+        $this->sectionService = $sectionService;
+        $this->sectionItemService = $sectionItemService;
+        $this->notificationService = $notificationService;
+    }
 
     public function saveAssessment(array $validatedAssessment, string $courseId)
     {
@@ -104,24 +118,16 @@ class AssessmentService
         // also get soft deleted assessment but with conditon
         // that it only displays assessment deleted by the user
         $assessmentList = Assessment::where('course_id', $courseId)
-            ->with('assessmentType')
-            ->with(['author' => function ($query) {
-                $query->select('user_id', 'first_name', 'last_name');
-            }])
-            ->where(function ($query) use ($user) {
-                $query->where('created_by', $user->user_id)
-                    ->orWhere('status', 'published');
-            })
-            ->with(['quiz' => function ($query) {
-                $query->select('assessment_id', 'quiz_id', 'quiz_title');
-            }])
-            ->with(['files' => function ($query) {
-                $query->select('assessment_id', 'assessment_file_id', 'file_name', 'file_path');
-            }])
+            ->with([
+                'assessmentType',
+                'author:user_id,first_name,last_name',
+                'quiz:assessment_id,quiz_id,quiz_title',
+                'files:assessment_id,assessment_file_id,file_name,file_path'
+            ])
             ->withTrashed()
-            ->where(function ($query) use ($user) {
-                $query->whereNull('deleted_at')
-                    ->orWhere('created_by', $user->user_id);
+            ->when($user->role->role_name === 'student', function ($q) {
+                $q->where('status', 'published')
+                    ->whereNull('deleted_at');
             })
             ->whereDoesntHave('sectionItem') // Only gets assessments not created in section
             ->select(
@@ -211,5 +217,35 @@ class AssessmentService
         $assessment->restore();
 
         return  $this->getAssessmentCompleteDetails($assessment);
+    }
+
+    public function getUsersToNotify($courseId)
+    {
+        $users = User::where(function ($query) use ($courseId) {
+            $query->whereHas('programs.courses', function ($q) use ($courseId) {
+                $q->where('course_id', $courseId);
+            })
+                ->orWhereHas('role', function ($q) {
+                    $q->where('role_name', 'admin');
+                });
+        })
+            ->where('user_id', '!=', request()->user()->user_id)
+            ->pluck('user_id')
+            ->toArray();
+
+        return $users;
+    }
+
+    public function sendAssessmentNotification(Assessment $assessment, Course $course, Program $program)
+    {
+        $users = $this->getUsersToNotify($course->course_id);
+
+        $title = "New assessment available";
+        $body = "A new assessment {$assessment->assessment_title} is now available in {$course->course_name}.";
+
+        $baseUrl = config('app.app_base_url');
+        $actionUrl = "{$baseUrl}/programs/{$program->program_id}/courses/{$course->course_id}/assessments/{$assessment->assessment_id}";
+
+        $this->notificationService->notifyUsers($users, $title, $body, $actionUrl);
     }
 }

@@ -123,4 +123,10 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'app_base_url' => env('APP_BASE_URL'),
+
+    'vite_main_url' => env('VITE_MAIN_URL'),
+
+    'vite_socket_io_port' => env('VITE_SOCKET_IO_PORT')
+
 ];

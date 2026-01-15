@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Programs;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Program;
+use App\Services\Programs\ProgramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -13,10 +14,17 @@ use Illuminate\Support\Facades\Storage;
 
 class ProgramController extends Controller
 {
+    protected ProgramService $programService;
+
+    public function __construct(ProgramService $programService)
+    {
+        $this->programService = $programService;
+    }
+
     public function listPrograms()
     {
 
-        $query = Program::select('program_id', 'program_name', 'background_image');
+        $query = Program::select('program_id', 'program_name', 'program_description', 'background_image');
 
         // Check is user is not admin
         if (Auth::user()->role->role_name !== 'admin') {
@@ -40,19 +48,18 @@ class ProgramController extends Controller
         ]);
     }
 
-    public function store(Request $req)
+    public function store(Request $request)
     {
-
         // Validate input
-        $validated = $req->validate([
-            'program_name' => 'required|unique:programs,program_name|max:255',
+        $validated = $request->validate([
+            'program_name' => 'required|max:255',
             'program_description' => 'string|nullable',
         ]);
 
         // Create program
         $program = Program::create($validated);
 
-        $course_list = $req->all()['course_list'];
+        $course_list = $request->all()['course_list'];
 
         // Check if course_list is array and has value
         if (is_array($course_list) && !empty($course_list)) {
@@ -61,6 +68,16 @@ class ProgramController extends Controller
                 Course::create($course); // Store course in courses table
             }
         }
+
+        // Send notification
+        $title = "New Program Created";
+        $body = "The program {$program->program_name} has been successfully created by {$request->user()->first_name} {$request->user()->last_name} and added to the system.";
+
+        // Creates url where user can navigate the notification
+        $baseUrl = config('app.app_base_url');
+        $actionUrl = "{$baseUrl}/programs";
+
+        $this->programService->sendProgramNotification($request, $title, $body, $actionUrl);
 
         // Return a flash success 
         return back()->with('success', 'Program created successfully.');
@@ -100,6 +117,16 @@ class ProgramController extends Controller
             'archived_by' => $request->user()->user_id
         ]);
         $program->delete();
+
+        // Send notification
+        $title = "Program Archived";
+        $body = "The program {$program->program_name} has been archived by {$request->user()->first_name} {$request->user()->last_name} and is no longer active in the system.";
+
+        // Creates url where user can navigate the notification
+        $baseUrl = config('app.app_base_url');
+        $actionUrl = "{$baseUrl}/archives";
+
+        $this->programService->sendProgramNotification($request, $title, $body, $actionUrl);
 
         return to_route('programs.index')->with('success', 'Program archived successfully.');
     }

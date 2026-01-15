@@ -120,7 +120,9 @@ export default function QuizResponsesTable({
                             <th className="text-ascend-black font-black">
                                 Warnings
                             </th>
-                            <th className="text-ascend-black font-black"></th>
+                            <th className="text-ascend-black font-black">
+                                Tab Changes
+                            </th>
                         </tr>
                     </thead>
                     {responses.data.length > 0 && (
@@ -167,6 +169,16 @@ export default function QuizResponsesTable({
                                     >
                                         {response.detected_cheatings.length}
                                     </td>
+                                    <td
+                                        className={
+                                            response.detected_tabChange.length >
+                                            0
+                                                ? "text-ascend-red"
+                                                : "text-ascend-green"
+                                        }
+                                    >
+                                        {response.detected_tabChange.length}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -191,11 +203,23 @@ export default function QuizResponsesTable({
 
             {responses.data.length > 0 && (
                 <div className="flex flex-wrap-reverse items-center justify-between gap-5">
-                    <div className="flex space-x-[0.5px]">
-                        <PrimaryButton text={"Download"} />
+                    <div className="flex gap-[1px]">
+                        <PrimaryButton
+                            text={"Download PDF"}
+                            doSomething={() => {
+                                window.location.href = route(
+                                    "quiz.responses.export.pdf",
+                                    {
+                                        program: programId,
+                                        course: courseId,
+                                        assessment: assessment.assessment_id,
+                                    }
+                                );
+                            }}
+                        />
 
                         {/* Dropdown button */}
-                        <div className="dropdown dropdown-end cursor-pointer ">
+                        <div className="dropdown dropdown-end cursor-pointer">
                             <button
                                 tabIndex={0}
                                 role="button"

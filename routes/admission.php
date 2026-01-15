@@ -8,28 +8,21 @@ use App\Http\Controllers\Admission\AdmissionFileController;
 
 // Admission Page
 Route::get('/admission', [AdmissionFileController::class, 'index'])
-    ->middleware(['auth', 'verified', 'preventBack', 'checkRole:admin,student,skipvalidation'])
+    ->middleware(['auth', 'verified', 'preventBack', 'checkRole:admin,student,faculty,skipvalidation'])
     ->name('admission.index');
 
 // Admin Routes
 Route::prefix('admission')
     ->middleware(['auth', 'verified', 'preventBack', 'checkRole:admin'])
     ->group(function () {
-        // List pending students (with pagination/search)
+
+        // List pending students
         Route::get('/pending', [AdmissionFileController::class, 'getPendingStudents'])
             ->name('pending.students');
-
-        // List enrolled, dropout, and withdrawn students
-        Route::get('/enrolled', [AdmissionFileController::class, 'getEnrolledStudents'])
-            ->name('enrolled.students');
 
         // View specific pending student
         Route::get('/pending/{student}', [AdmissionFileController::class, 'viewPendingStudent'])
             ->name('pending.student.view');
-
-        // View specific enrolled student
-        Route::get('/enrolled/{student}', [AdmissionFileController::class, 'viewEnrolledStudent'])
-            ->name('enrolled.student.view');
 
         // Update student info
         Route::put('/enrolled/{student}', [AdmissionFileController::class, 'updateStudent'])
@@ -39,7 +32,7 @@ Route::prefix('admission')
         Route::put('/update-status/{id}', [AdmissionFileController::class, 'updateStatus'])
             ->name('admission.updateStatus');
 
-        // Archive Enrolled Student
+        // Archive student
         Route::delete('/students/{student}/archive', [AdmissionFileController::class, 'archive'])
             ->name('students.archive');
 
@@ -47,38 +40,50 @@ Route::prefix('admission')
         Route::put('/students/{student}/restore', [AdmissionFileController::class, 'restoreStudent'])
             ->name('student.restore');
 
-        // Force delete student and user data
-        Route::delete('/students/{student}/force-delete', [AdmissionFileController::class, 'forceDeleteStudent'])
-            ->name('student.force.delete');
-
-        // Update Student Profile Photo
+        // Update profile photo
         Route::put('/students/{student}/update-profile', [AdmissionFileController::class, 'updateProfile'])
             ->name('student.profile.update');
 
-        // Route to stream admission file
-        Route::get('/admission/{student}/admission-files/{file}/stream', [AdmissionFileController::class, 'streamAdmissionFile'])
-            ->name('admission.file.stream');
-
-        // Route to download admission file
-        Route::get('/admission/{student}/admission-files/{file}/download', [AdmissionFileController::class, 'downloadAdmissionFile'])
-            ->name('admission.file.download');
-
-        // Route to download/Export Pending Students through through CSV    
+        // Export Pending Students
         Route::get('/admissions/pending/export-csv', [AdmissionFileController::class, 'exportCsv'])
             ->name('admissions.pending.exportCsv');
 
-        // Route to download/Export Pending Students through through PDF
         Route::get('/admissions/pending/export-pdf', [AdmissionFileController::class, 'exportPdf'])
             ->name('admissions.pending.exportPdf');
 
-        // Route to download/Export Enrolled Students through CSV  
+        // Export Enrolled Students
         Route::get('/admissions/enrolled/export-csv', [AdmissionFileController::class, 'exportEnrolledCsv'])
             ->name('admissions.enrolled.exportCsv');
 
-        // Route to download/Export Enrolled Students throughPDF 
         Route::get('/admissions/enrolled/export-pdf', [AdmissionFileController::class, 'exportEnrolledPdf'])
             ->name('admissions.enrolled.exportPdf');
+
+        // Stream admission file
+        Route::get('/admission/{student}/admission-files/{file}/stream', [AdmissionFileController::class, 'streamAdmissionFile'])
+            ->name('admission.file.stream');
+
+        // Download admission file
+        Route::get('/admission/{student}/admission-files/{file}/download', [AdmissionFileController::class, 'downloadAdmissionFile'])
+            ->name('admission.file.download');
     });
+
+//Admin and Faculty Routes
+Route::prefix('admission')
+    ->middleware(['auth', 'verified', 'preventBack', 'checkRole:admin,faculty'])
+    ->group(function () {
+
+        // Enrolled list
+        Route::get('/enrolled', [AdmissionFileController::class, 'getEnrolledStudents'])
+            ->name('enrolled.students');
+
+        // View specific enrolled student
+        Route::get('/enrolled/{student}', [AdmissionFileController::class, 'viewEnrolledStudent'])
+            ->name('enrolled.student.view');
+
+        Route::get('/admission/{student}/export/{format}', [AdmissionFileController::class, 'exportStudentData'])
+            ->name('admission.export.student');
+    });
+
 
 //student Routes
 Route::prefix('admission')

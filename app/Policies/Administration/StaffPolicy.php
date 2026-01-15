@@ -16,13 +16,4 @@ class StaffPolicy
         // Check if the auth user has a role admin
         return $user->role->role_name === 'admin';
     }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDeleteStaff(User $user): bool
-    {
-        // Check if the auth user has a role admin
-        return $user->role->role_name === 'admin';
-    }
 }

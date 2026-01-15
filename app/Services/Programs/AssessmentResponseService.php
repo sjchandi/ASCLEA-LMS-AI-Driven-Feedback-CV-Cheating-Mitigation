@@ -135,7 +135,7 @@ class AssessmentResponseService
         }
 
         if ($assessment->assessmentType->assessment_type === "quiz") {
-            $responses->with('detectedCheatings');
+            $responses->with(['detectedCheatings', 'tabDetects']);
 
             $transformed = function ($response) {
                 return [
@@ -145,7 +145,8 @@ class AssessmentResponseService
                     'time_spent' => $response->time_spent,
                     'score' => $response->score,
                     'submitted_by' => $response->submittedBy->member->user,
-                    'detected_cheatings' => $response->detectedCheatings
+                    'detected_cheatings' => $response->detectedCheatings,
+                    'detected_tabChange' => $response->tabDetects,
                 ];
             };
         }
@@ -297,5 +298,16 @@ class AssessmentResponseService
         };
 
         return $callback;
+    }
+
+    // Responsible foor soft deleting the assessment submission when it was reset
+    public function deleteAssessmentSubmissions(Assessment $assessment)
+    {
+        $assessment->assessmentSubmissions()->delete();
+
+        // Need to remove feedback since no submission will be display
+        $assessment->update([
+            'feedback' => null
+        ]);
     }
 }

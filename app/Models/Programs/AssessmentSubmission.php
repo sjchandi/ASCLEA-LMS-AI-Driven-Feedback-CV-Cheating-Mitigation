@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\CV\DetectedCheating; 
-
+use App\Models\CV\DetectedCheating;
+use App\Models\CV\tabDetect;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AssessmentSubmission extends Model
 {
-    use HasUuids;
+    use HasUuids, SoftDeletes;
 
     public $incrementing = false;
 
@@ -29,6 +30,11 @@ class AssessmentSubmission extends Model
         'end_at',
         'score',
         'feedback',
+        'question_order',
+    ];
+
+    protected $casts = [
+        'question_order' => 'array',
     ];
 
     public function quizAnswers(): HasMany
@@ -39,6 +45,11 @@ class AssessmentSubmission extends Model
     public function detectedCheatings(): HasMany
     {
         return $this->hasMany(DetectedCheating::class, 'assessment_submission_id');
+    }
+
+    public function tabDetects(): HasMany
+    {
+        return $this->hasMany(tabDetect::class, 'assessment_submission_id');
     }
 
     public function assessment(): BelongsTo

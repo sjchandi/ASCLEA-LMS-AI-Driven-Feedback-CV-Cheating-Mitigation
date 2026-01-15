@@ -2,8 +2,14 @@ import React, { useState, useEffect } from "react";
 import PrimaryButton from "../../Components/Button/PrimaryButton";
 import { useForm, Link, usePage } from "@inertiajs/react";
 import { useRoute } from "ziggy-js";
+import useNotificationStore from "../../Stores/Notification/notificationStore";
 
 export default function Login() {
+    //  Notification store
+    const clearNotificationState = useNotificationStore(
+        (state) => state.clearNotificationState
+    );
+
     const route = useRoute();
     const [successMsg, setSuccessMsg] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
@@ -30,6 +36,11 @@ export default function Login() {
             ? "medium"
             : "small"
     );
+
+    // This will clear notifcaation state when user was redirected to login page after restore
+    useEffect(() => {
+        clearNotificationState();
+    }, []);
 
     useEffect(() => {
         setSuccessMsg(flash.success ? flash.success : null);
@@ -92,14 +103,14 @@ export default function Login() {
                         <input
                             type="text"
                             id="emailfloat"
-                            class="block px-4 py-3 w-full text-sm bg-transparent border-1 border-ascend-gray1 appearance-non focus:outline-ascend-blue peer"
+                            className="block px-4 py-3 w-full text-sm bg-transparent border-1 border-ascend-gray1 appearance-non focus:outline-ascend-blue peer"
                             placeholder=" "
                             value={data.email}
                             onChange={(e) => setData("email", e.target.value)}
                         />
                         <label
                             htmlFor="emailfloat"
-                            class="absolute text-sm text-ascend-gray1 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-focus:text-ascend-blue peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1"
+                            className="absolute text-sm text-ascend-gray1 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-focus:text-ascend-blue peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1"
                         >
                             Email
                         </label>
@@ -109,7 +120,7 @@ export default function Login() {
                         <input
                             type={showPassword ? "text" : "password"}
                             id="passwordfloat"
-                            class="block px-4 py-3 w-full text-sm bg-transparent border-1 border-ascend-gray1 appearance-non focus:outline-ascend-blue peer password-input"
+                            className="block px-4 py-3 w-full text-sm bg-transparent border-1 border-ascend-gray1 appearance-non focus:outline-ascend-blue peer password-input"
                             placeholder=" "
                             value={data.password}
                             onChange={(e) =>
@@ -118,7 +129,7 @@ export default function Login() {
                         />
                         <label
                             htmlFor="passwordfloat"
-                            class="absolute text-sm text-ascend-gray1 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-focus:text-ascend-blue peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1"
+                            className="absolute text-sm text-ascend-gray1 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-focus:text-ascend-blue peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1"
                         >
                             Password
                         </label>

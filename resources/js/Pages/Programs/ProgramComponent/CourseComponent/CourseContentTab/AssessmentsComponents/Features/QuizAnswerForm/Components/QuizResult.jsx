@@ -43,10 +43,9 @@ export default function QuizResult({
                     </RoleGuard>
 
                     {/* Questions here */}
-
                     {questions &&
                         questions.length > 0 &&
-                        questions.map((question) => (
+                        questions.map((question, index) => (
                             <QuestionResultItem
                                 key={question.question_id}
                                 courseId={courseId}
@@ -54,6 +53,7 @@ export default function QuizResult({
                                 questionDetails={question}
                                 assessment={assessment}
                                 user={auth.user}
+                                index={index}
                             />
                         ))}
                 </div>

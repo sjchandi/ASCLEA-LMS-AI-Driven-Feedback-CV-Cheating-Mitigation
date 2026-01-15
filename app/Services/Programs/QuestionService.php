@@ -2,6 +2,7 @@
 
 namespace App\Services\Programs;
 
+use App\Models\Programs\AssessmentSubmission;
 use App\Models\Programs\Question;
 use App\Models\Programs\QuestionOption;
 use App\Models\Programs\Quiz;
@@ -60,14 +61,16 @@ class QuestionService
         }
     }
 
-    public function getQuestions(Quiz $quiz, string $assessmentSubmisisonId, array $optionSelectedFields, array $studentAnswerSelectedFields, bool $isPaginated)
+    public function getQuestions(Quiz $quiz, AssessmentSubmission $assessmentSubmission, array $optionSelectedFields, array $studentAnswerSelectedFields, bool $isPaginated)
     {
         // $studentAnswerSelectedFields is parameter use to conditionally select the fields of student quiz answer
         // since this function will be use for displaying the question in quiz answer form and in the results along with 
         // student quiz answer / question answer of the student
 
         // Return the list of question along with its options
-        $query = $quiz->questions()
+        $questionOrder = $assessmentSubmission->question_order;
+
+        $query = Question::whereIn('question_id', $questionOrder)
             ->with([
                 'options' => function ($query) use ($optionSelectedFields) {
                     $query->select($optionSelectedFields)
@@ -75,12 +78,18 @@ class QuestionService
                 }
             ])
             ->with([
-                'studentAnswer' => function ($query) use ($assessmentSubmisisonId, $studentAnswerSelectedFields) {
-                    $query->where('assessment_submission_id', $assessmentSubmisisonId)->select($studentAnswerSelectedFields);
+                'studentAnswer' => function ($query) use ($assessmentSubmission, $studentAnswerSelectedFields) {
+                    $query->where('assessment_submission_id', $assessmentSubmission->assessment_submission_id)->select($studentAnswerSelectedFields);
                 }
-            ])
-            ->orderBy("sort_order");
+            ]);
 
+        if ($quiz->randomize && !is_null($questionOrder)) {
+            $quotedOrder = array_map(fn($id) => "'$id'", $questionOrder);
+
+            $query->orderByRaw("FIELD(question_id, " . implode(',', $quotedOrder) . ")");
+        } else {
+            $query->orderBy("sort_order");
+        }
 
         if ($isPaginated) {
             return $query->paginate(10, ['*'], 'page')->withQueryString();

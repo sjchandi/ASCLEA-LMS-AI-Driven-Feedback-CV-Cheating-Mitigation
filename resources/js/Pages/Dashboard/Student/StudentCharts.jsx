@@ -75,15 +75,25 @@ export default function StudentCharts({ dailyTimeSpent = [], courseImprovementRa
                     <div className="flex justify-between items-center">
                         <h1 className="text-size4 font-bold">Improvement Rate</h1>
                         <span className="text-size1 flex items-center">
-                            {selected ? `${selected.improvement_rate}%` : "—"}
-                            {selected && selected.improvement_rate >= 0 ? (
-                                <MdArrowUpward className="text-ascend-green text-size3" />
+                            {selected ? (
+                                <>
+                                    {/* Show the calculated improvement percentage */}
+                                    {selected.improvement_rate}%
+                                    
+                                    {/* Only show the arrow if we have a "Current" value to compare against the baseline */}
+                                    {selected.current_avg > 0 && (
+                                        selected.improvement_rate >= 0 ? (
+                                            <MdArrowUpward className="text-ascend-green text-size3" />
+                                        ) : (
+                                            <MdArrowDownward className="text-ascend-red text-size3" />
+                                        )
+                                    )}
+                                </>
                             ) : (
-                                <MdArrowDownward className="text-ascend-red text-size3" />
+                                "—"
                             )}
                         </span>
                     </div>
-
                     <CustomSelect
                         selectField={
                             <select

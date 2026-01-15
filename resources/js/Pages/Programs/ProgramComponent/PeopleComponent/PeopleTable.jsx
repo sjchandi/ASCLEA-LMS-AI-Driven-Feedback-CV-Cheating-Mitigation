@@ -151,9 +151,15 @@ export default function PeopleTable() {
                 <table className="table">
                     <thead className="text-ascend-black">
                         <tr className="border-b-2 border-ascend-gray3">
-                            <th>Name</th>
-                            <th>Role</th>
-                            <th>Email</th>
+                            <th className="text-ascend-black font-black">
+                                Name
+                            </th>
+                            <th className="text-ascend-black font-black">
+                                Role
+                            </th>
+                            <th className="text-ascend-black font-black">
+                                Email
+                            </th>
                         </tr>
                     </thead>
                     {members.data && members.data.length > 0 && (

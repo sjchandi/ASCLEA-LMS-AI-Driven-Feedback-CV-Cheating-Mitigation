@@ -1,27 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePage } from "@inertiajs/react";
 import Pagination from "../../../Components/Pagination";
 import ArchivedStaffRow from "./ArchivedStaffRow";
 import EmptyState from "../../../Components/EmptyState/EmptyState";
 import useArchive from "./Hooks/useArchive";
 import AlertModal from "../../../Components/AlertModal";
+import { IoSearch } from "react-icons/io5";
 
 export default function ArchivedStaff() {
     const { archivedStaff } = usePage().props;
 
     // Custom hook
-    const { isLoading, handleRestoreStaff, handleForceDeleteStaff } =
-        useArchive();
+    const {
+        isLoading,
+        handleRestoreStaff,
+        search,
+        debounceHandleSearch,
+        searchName,
+    } = useArchive();
 
     // States for alert modal
     const [openAlerModal, setOpenAlertModal] = useState(false);
-    const [action, setAction] = useState(null);
     const [staffId, setStaffId] = useState(null);
+
+    useEffect(() => {
+        searchName("archivedStaff");
+    }, [search]);
 
     return (
         <div className="font-nunito-sans space-y-5">
             <div className="flex justify-between items-center gap-5">
                 <h1 className="text-size6 font-bold">Archived Staff</h1>
+                <div className="relative">
+                    <input
+                        className="border w-full sm:w-60 pl-10 pr-3 py-2 border-ascend-black focus:outline-ascend-blue"
+                        type="text"
+                        placeholder="Search name"
+                        onChange={debounceHandleSearch}
+                    />
+                    <IoSearch className="absolute text-size4 left-3 top-1/2 -translate-y-1/2 text-ascend-gray1" />
+                </div>
             </div>
 
             <div className="overflow-x-auto overflow-y-hidden space-y-5">
@@ -37,9 +55,6 @@ export default function ArchivedStaff() {
                             <th className="text-ascend-black font-black">
                                 Date archived
                             </th>
-                            <th className="text-ascend-black font-black">
-                                Days remaining
-                            </th>
                         </tr>
                     </thead>
                     {archivedStaff.data.length > 0 && (
@@ -49,7 +64,6 @@ export default function ArchivedStaff() {
                                     key={staff.staff_id}
                                     staff={staff}
                                     setOpenAlertModal={setOpenAlertModal}
-                                    setAction={setAction}
                                     setStaffId={setStaffId}
                                 />
                             ))}
@@ -76,24 +90,12 @@ export default function ArchivedStaff() {
             {/* Display alert modal */}
             {openAlerModal && (
                 <AlertModal
-                    title={
-                        action === "restore"
-                            ? "Restore Staff"
-                            : "Permanently Delete Staff"
-                    }
-                    description={
-                        action === "restore"
-                            ? "Are you sure you want to restore this staff?"
-                            : "Are you sure you want to permanently delete this staff? All data associated with this staff will be permanently lost and cannot be recovered."
-                    }
+                    title={"Restore Staff"}
+                    description={"Are you sure you want to restore this staff?"}
                     closeModal={() => setOpenAlertModal(false)}
-                    onConfirm={() => {
-                        if (action === "restore") {
-                            handleRestoreStaff(staffId, setOpenAlertModal);
-                        } else {
-                            handleForceDeleteStaff(staffId, setOpenAlertModal);
-                        }
-                    }}
+                    onConfirm={() =>
+                        handleRestoreStaff(staffId, setOpenAlertModal)
+                    }
                     isLoading={isLoading}
                 />
             )}

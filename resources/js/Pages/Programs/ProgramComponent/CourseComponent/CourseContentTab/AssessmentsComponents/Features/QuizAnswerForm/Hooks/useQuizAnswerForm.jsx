@@ -5,6 +5,7 @@ import { debounce } from "lodash";
 import { displayToast } from "../../../../../../../../../Utils/displayToast";
 import DefaultCustomToast from "../../../../../../../../../Components/CustomToast/DefaultCustomToast";
 import useQuizAnswerStore from "../Stores/quizAnswerStore";
+import useTabSwitchStore from "../Stores/useTabSwitchStore";
 import saveAnswer from "../Services/quizAnswerService";
 import useModulesStore from "../../../../ModulesComponents/Stores/modulesStore";
 import { endCV } from "../../../../../../../../../Utils/cvController";
@@ -19,6 +20,14 @@ export default function useQuizAnswerForm() {
     // Module store
     const unlockSectionAndSectionItems = useModulesStore(
         (state) => state.unlockSectionAndSectionItems
+    );
+
+    // Tab switch store
+    const tabDetectionEnabled = useTabSwitchStore(
+        (state) => state.tabDetectionEnabled
+    );
+    const setTabDetectionEnabled = useTabSwitchStore(
+        (state) => state.setTabDetectionEnabled
     );
 
     const studentAnswers = useQuizAnswerStore((state) => state.studentAnswers);
@@ -205,6 +214,7 @@ export default function useQuizAnswerForm() {
                         ) {
                             // Stopping CV if it's enabled
                             endCV();
+                            setTabDetectionEnabled(false);
                         }
 
                         setQuestionRequiredError(null);

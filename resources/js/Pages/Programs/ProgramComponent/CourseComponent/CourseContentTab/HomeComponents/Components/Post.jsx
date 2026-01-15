@@ -30,7 +30,7 @@ export default function Post({ postContent }) {
 
     return (
         <>
-            <div className="flex flex-col justify-between border border-ascend-gray1 shadow-shadow1 p-5 space-y-5 cursor-pointer card-hover mt-5">
+            <div className="flex flex-col justify-between border border-ascend-gray1 shadow-shadow1 p-5 space-y-5 card-hover mt-5">
                 <div className="flex items-center gap-2 md:gap-20">
                     <div className="flex-1 min-w-0 flex flex-wrap gap-5">
                         <div className="flex items-center gap-2">
@@ -47,18 +47,9 @@ export default function Post({ postContent }) {
                                         {"Archived"}
                                     </span>
                                 </div>
-                                <span className="font-bold">
-                                    {`Permanently deleted in
-                                                    ${getRemainingDays(
-                                                        postContent.deleted_at,
-                                                        30
-                                                    )}
-                                                    days`}
-                                </span>
                             </div>
                         ) : (
-                            postContent.author.user_id ===
-                                auth.user.user_id && (
+                            auth.user.role_name !== "student" && (
                                 <div
                                     className={`px-2 ${
                                         postContent.status === "published"
@@ -75,7 +66,8 @@ export default function Post({ postContent }) {
                             )
                         )}
                     </div>
-                    {auth.user.user_id === postContent.created_by && (
+                    {(auth.user.user_id === postContent.created_by ||
+                        auth.user.role_name === "admin") && (
                         <RoleGuard allowedRoles={["admin", "faculty"]}>
                             <div className="h-8 flex items-center">
                                 <div className="dropdown dropdown-end cursor-pointer">
@@ -167,7 +159,18 @@ export default function Post({ postContent }) {
 
                     <div className="flex flex-wrap-reverse justify-between items-baseline font-nunito-sans gap-2">
                         <span className="text-size1">
-                            Posted on {formatFullDate(postContent.created_at)}
+                            {postContent.deleted_at
+                                ? `Archived on ${formatFullDate(
+                                      postContent.deleted_at
+                                  )}`
+                                : postContent.updated_at !==
+                                  postContent.created_at
+                                ? `Updated on ${formatFullDate(
+                                      postContent.updated_at
+                                  )}`
+                                : `Posted on ${formatFullDate(
+                                      postContent.created_at
+                                  )}`}
                         </span>
                         <span className="font-bold">
                             {`${postContent.author.first_name}

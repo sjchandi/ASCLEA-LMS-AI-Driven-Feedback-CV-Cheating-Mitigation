@@ -13,21 +13,20 @@ Route::prefix('programs/{program}')
         Route::get('/users',  [PeopleController::class, 'listUsers'])->can('accessUsersToAdd', LearningMember::class)->name('program.list.users');
 
         // Route for adding members in the program
-        Route::post('/member/add',  [PeopleController::class, 'addMember'])->can('addMember', LearningMember::class)->name('program.add.member');
+        Route::post('/members/add',  [PeopleController::class, 'addMember'])->can('addMember', LearningMember::class)->name('program.add.member');
 
         // Route for removing member in the table
-        Route::delete(('/member/{member}/remove'), [PeopleController::class, 'removeMember'])->can('removeMember', LearningMember::class)->name('program.remove.member');
+        Route::delete(('/members/{member}/remove'), [PeopleController::class, 'removeMember'])->can('removeMember', LearningMember::class)->name('program.remove.member');
 
         // Route for viewing specific member
-        Route::get('/member/{member}', [PeopleController::class, 'viewMember'])->can('viewMember', 'member')->name('program.member.view');
+        Route::get('/members/{member}', [PeopleController::class, 'viewMember'])->can('viewMember', 'member')->name('program.member.view');
 
         // Route for listing courses to be assigned to member
-        Route::get('/member/{member}/courses', [PeopleController::class, 'listCourses'])->can('viewAny', AssignedCourse::class)->name('program.member.assign.courses.list');
+        Route::get('/members/{member}/courses', [PeopleController::class, 'listCourses'])->can('viewAny', AssignedCourse::class)->name('program.member.assign.courses.list');
 
         // Route for assigning course to member
-        Route::post('/member/{member}/courses', [PeopleController::class, 'assignCourses'])->can('assignCourse', AssignedCourse::class)->name('program.member.assign.courses.store');
+        Route::post('/members/{member}/courses', [PeopleController::class, 'assignCourses'])->can('assignCourse', AssignedCourse::class)->name('program.member.assign.courses.store');
 
         // Route for assigning course to member
-        Route::delete('/member/{member}/courses/{assignedCourse}', [PeopleController::class, 'removeAssignedCourse'])->can('removeAssignedCourse', AssignedCourse::class)->name('program.member.assign.courses.remove');
-
-});
+        Route::delete('/members/{member}/courses/{assignedCourse}', [PeopleController::class, 'removeAssignedCourse'])->can('removeAssignedCourse', AssignedCourse::class)->name('program.member.assign.courses.remove');
+    });

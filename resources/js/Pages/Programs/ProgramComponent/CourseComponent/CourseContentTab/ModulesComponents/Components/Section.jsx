@@ -173,18 +173,9 @@ export default function Section({ sectionDetails }) {
                                         {"Archived"}
                                     </span>
                                 </div>
-                                <span className="font-bold">
-                                    {`Permanently deleted in
-                                                           ${getRemainingDays(
-                                                               sectionDetails.deleted_at,
-                                                               30
-                                                           )}
-                                                            days`}
-                                </span>
                             </div>
                         ) : (
-                            sectionDetails.author.user_id ===
-                                auth.user.user_id && (
+                            <RoleGuard allowedRoles={["admin"]}>
                                 <div
                                     className={`px-2 ${
                                         sectionDetails.status === "published"
@@ -198,107 +189,100 @@ export default function Section({ sectionDetails }) {
                                             : "Draft"}
                                     </span>
                                 </div>
-                            )
+                            </RoleGuard>
                         )}
                     </div>
 
-                    {auth.user.user_id === sectionDetails.created_by && (
-                        <RoleGuard allowedRoles={["admin"]}>
-                            <div className="dropdown dropdown-end cursor-pointer">
-                                <div
-                                    tabIndex={0}
-                                    role="button"
-                                    className="rounded-4xl p-1 -mr-1 transition-all duration-300 hover:bg-ascend-lightblue/10"
-                                >
-                                    <BsThreeDotsVertical className="text-size3" />
-                                </div>
+                    <RoleGuard allowedRoles={["admin"]}>
+                        <div className="dropdown dropdown-end cursor-pointer">
+                            <div
+                                tabIndex={0}
+                                role="button"
+                                className="rounded-4xl p-1 -mr-1 transition-all duration-300 hover:bg-ascend-lightblue/10"
+                            >
+                                <BsThreeDotsVertical className="text-size3" />
+                            </div>
 
-                                <ul
-                                    tabIndex={0}
-                                    className="dropdown-content menu font-bold space-y-2 bg-ascend-white min-w-36 px-0 border border-ascend-gray1 shadow-lg !transition-none text-ascend-black"
-                                >
-                                    {!sectionDetails.deleted_at ? (
-                                        <>
-                                            <li
-                                                onClick={() => {
-                                                    handleUpdateSectionStatus(
-                                                        sectionDetails.section_id
-                                                    );
-                                                    closeDropDown();
-                                                }}
-                                            >
-                                                <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
-                                                    {sectionDetails.status ===
-                                                    "published"
-                                                        ? "Unpublish section"
-                                                        : "Publish section"}
-                                                </a>
-                                            </li>
-                                            {sectionDetails.status ===
-                                                "draft" && (
-                                                <>
-                                                    <li
-                                                        name="add-material"
-                                                        onClick={openForm}
-                                                    >
-                                                        <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
-                                                            Add material
-                                                        </a>
-                                                    </li>
-                                                    <li
-                                                        name="add-assessment"
-                                                        onClick={openForm}
-                                                    >
-                                                        <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
-                                                            Add assessment
-                                                        </a>
-                                                    </li>
-                                                    <li
-                                                        onClick={
-                                                            handleClickEdit
-                                                        }
-                                                    >
-                                                        <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
-                                                            Edit section title
-                                                        </a>
-                                                    </li>
-                                                </>
-                                            )}
-                                            <li
-                                                onClick={() => {
-                                                    handleArchiveSection(
-                                                        sectionDetails.section_id
-                                                    );
-                                                    closeDropDown();
-                                                }}
-                                            >
-                                                <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
-                                                    Archive section
-                                                </a>
-                                            </li>
-                                        </>
-                                    ) : (
+                            <ul
+                                tabIndex={0}
+                                className="dropdown-content menu font-bold space-y-2 bg-ascend-white min-w-36 px-0 border border-ascend-gray1 shadow-lg !transition-none text-ascend-black"
+                            >
+                                {!sectionDetails.deleted_at ? (
+                                    <>
                                         <li
                                             onClick={() => {
-                                                handleRestoreSection(
+                                                handleUpdateSectionStatus(
                                                     sectionDetails.section_id
                                                 );
                                                 closeDropDown();
                                             }}
                                         >
                                             <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
-                                                Restore section
+                                                {sectionDetails.status ===
+                                                "published"
+                                                    ? "Unpublish section"
+                                                    : "Publish section"}
                                             </a>
                                         </li>
-                                    )}
-                                </ul>
-                            </div>
-                        </RoleGuard>
-                    )}
+                                        {sectionDetails.status === "draft" && (
+                                            <>
+                                                <li
+                                                    name="add-material"
+                                                    onClick={openForm}
+                                                >
+                                                    <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
+                                                        Add material
+                                                    </a>
+                                                </li>
+                                                <li
+                                                    name="add-assessment"
+                                                    onClick={openForm}
+                                                >
+                                                    <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
+                                                        Add assessment
+                                                    </a>
+                                                </li>
+                                                <li onClick={handleClickEdit}>
+                                                    <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
+                                                        Edit section title
+                                                    </a>
+                                                </li>
+                                            </>
+                                        )}
+                                        <li
+                                            onClick={() => {
+                                                handleArchiveSection(
+                                                    sectionDetails.section_id
+                                                );
+                                                closeDropDown();
+                                            }}
+                                        >
+                                            <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
+                                                Archive section
+                                            </a>
+                                        </li>
+                                    </>
+                                ) : (
+                                    <li
+                                        onClick={() => {
+                                            handleRestoreSection(
+                                                sectionDetails.section_id
+                                            );
+                                            closeDropDown();
+                                        }}
+                                    >
+                                        <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
+                                            Restore section
+                                        </a>
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
+                    </RoleGuard>
                 </div>
 
                 <div
-                    className={`relative border-r bg-ascend-lightblue border-l border-b border-ascend-gray1 overflow-hidden transition-all duration-500 ease-in-out ${
+                    className={`relative border-r bg-ascend-lightblue border-l border-b border-ascend-gray1 transition-all duration-500 ease-in-out ${
                         isExpanded
                             ? "max-h-200 opacity-100"
                             : "max-h-0 opacity-0"
@@ -316,7 +300,7 @@ export default function Section({ sectionDetails }) {
                         </div>
                     )}
                     <div
-                        className={`max-h-[500px] space-y-3 overflow-y-auto ${
+                        className={`flex flex-col gap-3 ${
                             isExpanded ? "p-5" : "px-5 py-0"
                         }`}
                     >

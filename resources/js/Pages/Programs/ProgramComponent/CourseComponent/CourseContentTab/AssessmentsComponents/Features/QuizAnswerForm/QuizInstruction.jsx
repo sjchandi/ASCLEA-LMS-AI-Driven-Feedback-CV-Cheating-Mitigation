@@ -45,9 +45,11 @@ export default function QuizInstruction({
         const { hours, minutes } = convertDurationMinutes(quiz.duration);
 
         setDuration(
-            `${hours} ${hours > 2 ? "hours" : "hour"} ${
-                minutes
-                    ? `and ${minutes} ${minutes > 2 ? "minutes" : "minute"}`
+            `${hours > 0 ? `${hours} ${hours > 1 ? "hours" : "hour"}` : ""} ${
+                minutes > 0
+                    ? `${hours > 0 ? "and" : ""} ${minutes} ${
+                          minutes > 1 ? "minutes" : "minute"
+                      }`
                     : ""
             }`
         );

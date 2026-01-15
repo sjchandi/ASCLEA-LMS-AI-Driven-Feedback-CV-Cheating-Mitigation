@@ -39,7 +39,7 @@ class GradeController extends Controller
             'unselectedStudentGrades' => 'array',
         ]);
 
-        $this->gradeService->returnGrades($validated, $course->course_id);
+        $this->gradeService->returnGrades($validated, $course);
     }
 
     public function getStudentGrades(Request $request)

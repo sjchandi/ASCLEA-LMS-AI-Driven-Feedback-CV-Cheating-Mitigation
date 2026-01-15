@@ -5,10 +5,18 @@ namespace App\Services\Programs;
 use App\Models\AssignedCourse;
 use App\Models\Course;
 use App\Models\Programs\Grade;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class GradeService
 {
+    protected NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     public function getStudentsToBeGraded(Request $request, Course $course,  bool $isPaginated = true)
     {
         $students = $course->assignedTo()
@@ -72,9 +80,9 @@ class GradeService
         return $grade;
     }
 
-    public function returnGrades(array $validatedData, string $coursesId)
+    public function returnGrades(array $validatedData, Course $course)
     {
-        $grades = Grade::where('course_id', $coursesId);
+        $grades = Grade::where('course_id', $course->course_id);
 
         if ($validatedData['selectAll']) {
             if (!empty($validatedData['unselectedStudentGrades'])) {
@@ -89,6 +97,10 @@ class GradeService
         $grades->update([
             'status' => 'returned',
         ]);
+
+        $userIds = $grades->get()->pluck('student.member.user.user_id')->toArray();
+
+        $this->sendGradeNotification($userIds, $course);
     }
 
     public function handleExportStudentGradesToCsv($students)
@@ -112,5 +124,16 @@ class GradeService
         };
 
         return $callback;
+    }
+
+    public function sendGradeNotification(array $users, Course $course)
+    {
+        $title = "Course Grades Available";
+        $body = "Grades for your course {$course->course_name} are now available. Check your results!";
+
+        $baseUrl = config('app.app_base_url');
+        $actionUrl = "{$baseUrl}/grades";
+
+        $this->notificationService->notifyUsers($users, $title, $body, $actionUrl);
     }
 }

@@ -12,6 +12,7 @@ import {
     MdPayments,
     MdRateReview,
     MdArchive,
+    MdBackup,
 } from "react-icons/md";
 
 export default function Sidebar({
@@ -40,7 +41,7 @@ export default function Sidebar({
             url: "/admission",
             text: "Admission",
             icon: MdSchool,
-            roles: ["admin", "student"],
+            roles: ["admin", "student", "faculty"],
         },
         {
             url: "/programs",
@@ -71,6 +72,12 @@ export default function Sidebar({
             text: "Payment History",
             icon: MdPayments,
             roles: ["student"],
+        },
+        {
+            url: "/backup-and-restore",
+            text: "Backup and Restore",
+            icon: MdBackup,
+            roles: ["admin"],
         },
     ];
 

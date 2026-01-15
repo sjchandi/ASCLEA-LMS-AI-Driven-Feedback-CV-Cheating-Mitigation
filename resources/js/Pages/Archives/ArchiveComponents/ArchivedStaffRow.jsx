@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { formatFullDate } from "../../../Utils/formatFullDate";
 import PrimaryButton from "../../../Components/Button/PrimaryButton";
-import { getRemainingDays } from "../../../Utils/getRemainingDays";
 import ProfileImage from "../../../Components/ProfileImage";
 
 export default function ArchivedStaffRow({
     staff,
     setOpenAlertModal,
-    setAction,
     setStaffId,
 }) {
-    const hanleActionClick = (action) => {
-        setAction(action);
+    const hanleActionClick = () => {
         setOpenAlertModal(true);
         setStaffId(staff.staff_id);
     };
@@ -32,17 +29,11 @@ export default function ArchivedStaffRow({
                     : "N/A"}
             </td>
             <td>{formatFullDate(staff.deleted_at)}</td>
-            <td>{getRemainingDays(staff.deleted_at, 30)}d</td>
             <td className="flex gap-2">
                 <PrimaryButton
                     text={"Restore"}
                     btnColor={"bg-ascend-yellow"}
-                    doSomething={() => hanleActionClick("restore")}
-                />
-                <PrimaryButton
-                    text={"Delete"}
-                    btnColor={"bg-ascend-red"}
-                    doSomething={() => hanleActionClick("delete")}
+                    doSomething={hanleActionClick}
                 />
             </td>
         </tr>

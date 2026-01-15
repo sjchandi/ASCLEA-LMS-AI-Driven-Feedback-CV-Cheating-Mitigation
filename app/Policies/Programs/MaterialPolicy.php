@@ -31,14 +31,17 @@ class MaterialPolicy
      */
     public function viewMaterial(User $user, Material $material, Course $course): bool
     {
+        // User can view the material if they are admin 
+        // A faculty assigned to the course
+        // A student assigned  to the course and course was published
         $isAdmin = $user->role->role_name == "admin";
-        $isAuthor = $material->created_by === $user->user_id;
+        $isFaculty = $user->role->role_name == "faculty";
         $isPublished = $material->status === "published";
         $isCourseAssigned = $user->programs()->whereHas('courses', function ($query) use ($course) {
             $query->where('course_id', $course->course_id);
         })->exists();
 
-        $isAuthorized = ($isAdmin && ($isAuthor || $isPublished)) || ($isCourseAssigned && ($isAuthor || $isPublished));
+        $isAuthorized = $isAdmin || ($isCourseAssigned && ($isFaculty || $isPublished));
 
         return $isAuthorized;
     }
@@ -64,7 +67,11 @@ class MaterialPolicy
     public function updateMaterial(User $user, Material $material): bool
     {
         $isAuthor = $material->created_by === $user->user_id;
-        return  $isAuthor;
+        $isAdmin = $user->role->role_name == "admin";
+
+        $isAuthorized = $isAuthor || $isAdmin;
+
+        return  $isAuthorized;
     }
 
     /**
@@ -73,7 +80,11 @@ class MaterialPolicy
     public function archiveMaterial(User $user, Material $material): bool
     {
         $isAuthor = $material->created_by === $user->user_id;
-        return  $isAuthor;
+        $isAdmin = $user->role->role_name == "admin";
+
+        $isAuthorized = $isAuthor || $isAdmin;
+
+        return  $isAuthorized;
     }
 
     /**
@@ -86,8 +97,11 @@ class MaterialPolicy
         $material = Material::withTrashed()->findOrFail($materialId);
 
         $isAuthor = $material->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
 
-        return  $isAuthor;
+        $isAuthorized = $isAuthor || $isAdmin;
+
+        return  $isAuthorized;
     }
 
     /**
@@ -95,33 +109,33 @@ class MaterialPolicy
      */
     public function viewMaterialFile(User $user, Material $material, Course $course): bool
     {
-        // User can view the file if he is an admin and author of the material or the material was published
-        // If not admin to view the file the course should be assigned to the user and the author of the material or the material was published
+        // User can view the material  file if they are admin 
+        // A faculty assigned to the course
+        // A student assigned  to the course and course was published
         $isAdmin = $user->role->role_name == "admin";
-        $isAuthor = $material->created_by === $user->user_id;
+        $isFaculty = $user->role->role_name == "faculty";
         $isPublished = $material->status === "published";
         $isCourseAssigned = $user->programs()->whereHas('courses', function ($query) use ($course) {
             $query->where('course_id', $course->course_id);
         })->exists();
 
-        $isAuthorized = ($isAdmin && ($isAuthor || $isPublished)) || ($isCourseAssigned && ($isAuthor || $isPublished));
+        $isAuthorized = $isAdmin || ($isCourseAssigned && ($isFaculty || $isPublished));
 
         return $isAuthorized;
     }
 
     public function downloadMaterialFile(User $user, Material $material, Course $course): bool
     {
-        // User can download the file if he is an admin and author of the material or the material was published
-        // If not admin to download the file the course should be assigned to the user and userr is a faculty and the author of the material or the material was published
+        // User can download material file if user is an admin
+        //  Or user is a faculty and course was assigned 
+
         $isAdmin = $user->role->role_name == "admin";
         $isFaculty = $user->role->role_name == "faculty";
-        $isAuthor = $material->created_by === $user->user_id;
-        $isPublished = $material->status === "published";
         $isCourseAssigned = $user->programs()->whereHas('courses', function ($query) use ($course) {
             $query->where('course_id', $course->course_id);
         })->exists();
 
-        $isAuthorized = ($isAdmin && ($isAuthor || $isPublished)) || ($isFaculty && $isCourseAssigned && ($isAuthor || $isPublished));
+        $isAuthorized = $isAdmin || ($isFaculty && $isCourseAssigned);
 
         return $isAuthorized;
     }

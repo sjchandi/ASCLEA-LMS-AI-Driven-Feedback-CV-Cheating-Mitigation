@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PrimaryButton from "../../Components/Button/PrimaryButton";
+import AlertModal from "../../Components/AlertModal";
 import { router, usePage } from "@inertiajs/react";
 import { useRoute } from "ziggy-js";
 import useRegistrationStore from "../../Stores/Registration/registrationStore";
@@ -24,11 +25,24 @@ const RegistrationFields = () => {
     const [cityList, setCityList] = useState([]);
     const [barangayList, setBarangayList] = useState([]);
 
+    //Modal Terms and Condition
+    const [isTermsConditionOpen, setIsTermsConditionOpen] = useState(false);
+    const [approvedTerms, setApprovedTerms] = useState(false);
+
     useEffect(() => {
         regions().then((res) => {
             setRegionList(res);
         });
     }, []);
+
+    const closeTermsConditionModal = () => {
+        setIsTermsConditionOpen(false);
+    };
+
+    const approveTerms = () => {
+        setApprovedTerms(true);
+        setIsTermsConditionOpen(false);
+    };
 
     const handleRegionChange = (regionCode) => {
         const selectedRegion = regionList.find(
@@ -89,6 +103,11 @@ const RegistrationFields = () => {
 
     const register = () => {
         setErrorMessage("");
+
+        if (!approvedTerms) {
+            setErrorMessage({ error: "You must agree to the terms and conditions." });
+            return;
+        }
 
         router.post(route("register.user"), registration, {
             replace: true, // Prevent user from going back to this page
@@ -431,6 +450,23 @@ const RegistrationFields = () => {
                     </div>
                 </div>
 
+                <div className="pt-4 flex items-center gap-2">
+                <input
+                    type="checkbox"
+                    className="accent-ascend-blue w-4 h-4 cursor-pointer"
+                    checked={approvedTerms}
+                    onChange={(e) => {
+                        if (!approvedTerms) {
+                            setIsTermsConditionOpen(true);
+                        } else {
+                            setApprovedTerms(false);
+                        }
+                    }}
+
+                />
+                <span>Terms and Conditions</span>
+                </div>
+
                 {errorMessage.error && (
                     <div
                         role="alert"
@@ -462,6 +498,52 @@ const RegistrationFields = () => {
                     />
                 </div>
             </div>
+
+            {isTermsConditionOpen && (
+                <AlertModal
+                    title={
+                        "Terms and Conditions"
+                    }
+                    customBody={
+                        <div className="text-size2 text-justify my-4 p-4 border border-ascend-gray1 max-h-64 overflow-y-auto">
+                            <ol className="list-decimal pl-5 space-y-2 marker:font-semibold">
+                                <li>
+                                By using this Learning Management System (LMS), you agree to provide personal information
+                                such as your name, email address, and other details required for registration and course
+                                participation. This information is collected to ensure a smooth and personalized learning
+                                experience.
+                                </li>
+
+                                <li>
+                                During online quizzes or assessments, the LMS may monitor user activity and capture
+                                screenshots to detect any suspicious behavior that may indicate academic dishonesty.
+                                This process helps maintain fairness and integrity in the learning environment.
+                                </li>
+
+                                <li>
+                                All personal data and quiz monitoring information collected by the LMS will be securely
+                                stored and handled in compliance with applicable data protection laws. The data will be
+                                used solely for educational purposes and system functionality.
+                                </li>
+
+                                <li>
+                                By participating in quizzes and using the LMS, you explicitly consent to the collection
+                                and monitoring of data as described in these terms.
+                                </li>
+
+                                <li>
+                                Personal data will be retained only for as long as necessary to fulfill the purposes
+                                outlined in this agreement. Users have the right to request information regarding their
+                                data and its usage at any time.
+                                </li>
+                            </ol>
+                        </div>
+                    }
+                    onConfirm={approveTerms}
+                    closeModal={closeTermsConditionModal}
+                />
+            )}
+
         </>
     );
 };

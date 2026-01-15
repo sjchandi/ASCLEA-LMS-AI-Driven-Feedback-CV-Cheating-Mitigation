@@ -3,10 +3,12 @@ import { AiFillCheckCircle } from "react-icons/ai";
 import { usePage } from "@inertiajs/react";
 import useQuizAnswerForm from "../Hooks/useQuizAnswerForm";
 import useQuizAnswerStore from "../Stores/quizAnswerStore";
+import useTabSwitchStore from "../Stores/useTabSwitchStore";
 import BackButton from "../../../../../../../../../Components/Button/BackButton";
 import { handleClickBackBtn } from "../../../../../../../../../Utils/handleClickBackBtn";
 import RoleGuard from "../../../../../../../../../Components/Auth/RoleGuard";
 import CvMonitor from "../../../../../../../../../Components/CheatingMitigation/CV_Indicator";
+import TabSwitchingDetector from "../../../../../../../../../Components/CheatingMitigation/TabSwitchingDetector";
 import { endCV } from "../../../../../../../../../Utils/cvController";
 
 export default function QuizAnswerFormNav() {
@@ -23,10 +25,16 @@ export default function QuizAnswerFormNav() {
     const [faceDetected, setFaceDetected] = useState(false);
     const cvOptions = quizOptions?.map((o) => o.options) || [];
 
+
     // Quiz answer store
     const remainingTime = useQuizAnswerStore((state) => state.remainingTime);
     const setRemainingTime = useQuizAnswerStore(
         (state) => state.setRemainingTime
+    );
+
+    // Tab switch store
+    const tabDetectionEnabled = useTabSwitchStore(
+        (state) => state.tabDetectionEnabled
     );
 
     const timer = (end) => {
@@ -42,7 +50,8 @@ export default function QuizAnswerFormNav() {
                     typeof endCV === "function"
                 ) {
                     await endCV();
-                } // Stopping CV if after time ends
+                    setTabDetectionEnabled(false);
+                } // Stopping CV and tab switching detector after time ends
 
                 submitQuiz({
                     courseId,
@@ -145,6 +154,14 @@ export default function QuizAnswerFormNav() {
                                         }
                                         faceDetected={faceDetected}
                                     />
+
+                                    <TabSwitchingDetector enabled={tabDetectionEnabled} 
+                                    assessmentSubmissionId={
+                                        assessmentSubmission.assessment_submission_id
+                                    }
+                                    
+                                    />
+                                    
                                 </div>
                             )}
 

@@ -77,13 +77,4 @@ class CoursePolicy
         // Check if the auth user has a role admin
         return $user->role->role_name === 'admin';
     }
-
-    /**
-     * Determine whether the user can force delete the model.
-     */
-    public function forceDeleteCourse(User $user): bool
-    {
-        // Check if the auth user has a role admin
-        return $user->role->role_name === 'admin';
-    }
 }

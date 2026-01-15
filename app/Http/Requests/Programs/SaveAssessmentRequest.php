@@ -25,7 +25,7 @@ class SaveAssessmentRequest extends FormRequest
             'assessment_type' => 'required|exists:assessment_types,assessment_type',
             'assessment_title' => 'required|string|max:255',
             'assessment_description' => 'nullable|string',
-            'due_datetime' => 'nullable|date_format:Y-m-d\TH:i|after:now',
+            'due_datetime' => 'nullable|date|after:now',
             'total_points' => 'nullable|numeric|min:0',
             'status' => 'required|in:published,draft',
             'section_id' => 'nullable|string',

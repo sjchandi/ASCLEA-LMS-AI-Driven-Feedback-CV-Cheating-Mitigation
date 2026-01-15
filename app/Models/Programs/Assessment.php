@@ -67,6 +67,6 @@ class Assessment extends Model
 
     public function sectionItem(): MorphOne
     {
-        return $this->morphOne(SectionItem::class, 'item');
+        return $this->morphOne(SectionItem::class, 'item')->withTrashed();
     }
 }

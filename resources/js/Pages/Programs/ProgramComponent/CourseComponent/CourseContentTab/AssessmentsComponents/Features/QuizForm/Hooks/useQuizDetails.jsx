@@ -67,6 +67,7 @@ export default function useQuizDetails() {
             duration: initialQuizDetails.duration,
             show_answers_after: initialQuizDetails.show_answers_after,
             cheating_mitigation: initialQuizDetails.cheating_mitigation,
+            randomize: initialQuizDetails.randomize,
             cv_options:
                 initialQuizDetails.options.length > 0
                     ? initialQuizDetails.options.map((option) => option.options) // return only the option value

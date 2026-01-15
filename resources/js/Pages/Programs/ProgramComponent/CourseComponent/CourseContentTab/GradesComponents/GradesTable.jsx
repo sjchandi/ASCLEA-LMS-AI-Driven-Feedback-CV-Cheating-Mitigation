@@ -210,8 +210,19 @@ export default function GradesTable() {
 
             {students.data.length > 0 && (
                 <div className="flex flex-wrap-reverse items-center justify-between gap-5">
-                    <div className="flex space-x-[0.5px]">
-                        <PrimaryButton text={"Download"} />
+                    <div className="flex gap-[1px]">
+                        <PrimaryButton
+                            text={"Download PDF"}
+                            doSomething={() => {
+                                window.location.href = route(
+                                    "export.student.grades.pdf",
+                                    {
+                                        program: program.program_id,
+                                        course: course.course_id,
+                                    }
+                                );
+                            }}
+                        />
 
                         {/* Dropdown button */}
                         <div className="dropdown dropdown-end cursor-pointer ">

@@ -12,12 +12,15 @@ const ProfileDropdown = forwardRef((props, ref) => {
     const handleProfileClick = () => {
         router.visit(route("profile"));
 
+        // Close the dropdown
         props.setDropdown("");
     };
 
     const handleLogout = async () => {
         try {
+            // Close the dropdown
             props.setDropdown("");
+
             NProgress.start();
             await axios.post(route("logout.user")).then(() => {
                 window.location.href = "/login"; // Redirect to login page

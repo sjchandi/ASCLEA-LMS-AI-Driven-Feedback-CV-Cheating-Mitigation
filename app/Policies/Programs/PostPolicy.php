@@ -45,8 +45,11 @@ class PostPolicy
     public function updatePost(User $user, Post $post): bool
     {
         $isAuthor = $post->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
 
-        return $isAuthor;
+        $isAuthorized = $isAuthor || $isAdmin;
+
+        return  $isAuthorized;
     }
 
     /**
@@ -55,8 +58,11 @@ class PostPolicy
     public function archivePost(User $user, Post $post): bool
     {
         $isAuthor = $post->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
 
-        return $isAuthor;
+        $isAuthorized = $isAuthor || $isAdmin;
+
+        return  $isAuthorized;
     }
 
     /**
@@ -68,8 +74,11 @@ class PostPolicy
         $post = Post::withTrashed()->findOrFail($postId);
 
         $isAuthor = $post->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
 
-        return $isAuthor;
+        $isAuthorized = $isAuthor || $isAdmin;
+
+        return  $isAuthorized;
     }
 
     /**

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { calcPercentage } from "../../../../../../../../../Utils/calcPercentage";
-import { getElapsedTime } from "../../../../../../../../../Utils/getElapsedTime";
 import { Doughnut } from "react-chartjs-2";
 import { MdOutlineAccessTimeFilled } from "react-icons/md";
 import Loader from "../../../../../../../../../Components/Loader";
 import useGetQUizResultFeedback from "../Hooks/useGetQUizResultFeedback";
 import { cleanDecimal } from "../../../../../../../../../Utils/cleanDecimal";
+import { convertDurationMinutes } from "../../../../../../../../../Utils/convertDurationMinutes";
 
 export default function ResultFeedback({
     courseId,
@@ -28,9 +28,8 @@ export default function ResultFeedback({
         quiz.quiz_total_points
     );
 
-    const { hours, minutes, seconds } = getElapsedTime(
-        assessmentSubmission.created_at,
-        assessmentSubmission.submitted_at
+    const { hours, minutes } = convertDurationMinutes(
+        assessmentSubmission.time_spent
     );
 
     // Get ai feedback once the component was rendered
@@ -80,22 +79,26 @@ export default function ResultFeedback({
                             <MdOutlineAccessTimeFilled className="text-ascend-blue text-5xl" />
                             <div>
                                 <h1>Time Spent</h1>
-                                <p className="font-bold">
-                                    {hours > 0
-                                        ? hours === 1
-                                            ? `${hours} hour`
-                                            : `${hours} hours`
-                                        : ""}
-                                    {minutes > 0
-                                        ? minutes === 1
-                                            ? ` ${
-                                                  hours > 0 ? "and" : ""
-                                              } ${minutes} minute`
-                                            : ` ${
-                                                  hours > 0 ? "and" : ""
-                                              } ${minutes} minutes`
-                                        : ""}
-                                </p>
+                                {assessmentSubmission.time_spent > 0 ? (
+                                    <p className="font-bold">
+                                        {hours > 0
+                                            ? hours === 1
+                                                ? `${hours} hour`
+                                                : `${hours} hours`
+                                            : ""}
+                                        {minutes > 0
+                                            ? minutes === 1
+                                                ? ` ${
+                                                      hours > 0 ? "and" : ""
+                                                  } ${minutes} minute`
+                                                : ` ${
+                                                      hours > 0 ? "and" : ""
+                                                  } ${minutes} minutes`
+                                            : ""}
+                                    </p>
+                                ) : (
+                                    <p className="font-bold">0</p>
+                                )}
                             </div>
                         </div>
                     )}

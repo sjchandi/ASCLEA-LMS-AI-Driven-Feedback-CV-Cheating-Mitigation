@@ -55,4 +55,7 @@ Route::prefix('programs/{program}/courses/{course}')
 
         // Route for exporting quiz reponses to csv
         Route::get('/assessments/{assessment}/quiz/export/csv', [AssessmentController::class, 'exportQuizResponsesToCsv'])->can('downloadAssessmentResponsesData', 'assessment')->name('quiz.responses.export.csv');
+
+        // Reset the the responses of assessment
+        Route::delete('/assessments/{assessment}/reset', [AssessmentController::class, 'resetAssessment'])->can('resetAssessment', 'assessment')->name('assessment.reset');
     });

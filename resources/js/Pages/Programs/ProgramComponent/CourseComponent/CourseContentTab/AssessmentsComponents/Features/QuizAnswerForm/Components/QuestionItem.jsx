@@ -2,11 +2,16 @@ import { useState, useEffect } from "react";
 import useQuizAnswerForm from "../Hooks/useQuizAnswerForm";
 import { usePage } from "@inertiajs/react";
 
-export default function QuestionItem({ questionDetails, requiredError }) {
+export default function QuestionItem({
+    questionDetails,
+    requiredError,
+    index,
+    currentPage = 1,
+}) {
     const { assessmentSubmission, courseId } = usePage().props;
 
     // Custom hook
-    const { handleAnswerQuestion, debouncedSaveAnswer } = useQuizAnswerForm();
+    const { handleAnswerQuestion } = useQuizAnswerForm();
 
     const [answer, setAnswer] = useState(
         questionDetails.student_answer
@@ -16,19 +21,16 @@ export default function QuestionItem({ questionDetails, requiredError }) {
             : ""
     );
 
-    // useEffect(() => {
-    //     debouncedSaveAnswer(
-    //         answer,
-    //         courseId,
-    //         assessmentSubmission.assessment_submission_id,
-    //         questionDetails.question_id
-    //     );
-    // }, [answer]);
+    // Caculate the question number
+    // This is for when qquestions was randomized since we cant use
+    // the question sort_order value
+    const pageSize = 10;
+    const questioNumber = pageSize * (currentPage - 1) + index + 1;
 
     return (
         <div className="p-5 shadow-shadow1 border border-ascend-gray1 space-y-5">
             <div className="flex">
-                {`${questionDetails.sort_order}.`}
+                {`${questioNumber}.`}
                 <div className="w-full min-w-0 ml-2 space-y-5">
                     <div className="flex items-start gap-2 md:gap-20">
                         <p className="flex-1 min-w-0 break-words">

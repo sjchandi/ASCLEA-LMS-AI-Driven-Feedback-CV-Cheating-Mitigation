@@ -13,9 +13,17 @@ use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\Rule;
 use App\Policies\PaymentHistory\PaymentPolicy;
+use App\Services\PaymentHistory\PaymentHistoryService;
 
 class PaymentHistoryController extends Controller
 {
+    protected  PaymentHistoryService $paymentHistoryService;
+
+    public function __construct(PaymentHistoryService $paymentHistoryService)
+    {
+        $this->paymentHistoryService = $paymentHistoryService;
+    }
+
     public function paidStudents(Request $request)
     {
         $user = auth()->user();
@@ -69,8 +77,8 @@ class PaymentHistoryController extends Controller
         $payments = Payment::withTrashed()
             ->where('user_id', $userId)
             ->latest('receipt_date')
-            ->get(); 
-            
+            ->get();
+
         // Transform the collection
         $payments = $payments->map(function ($payment) {
             return [
@@ -87,7 +95,7 @@ class PaymentHistoryController extends Controller
         $user = Auth::user();
 
         $can = [
-            'view'     => true, 
+            'view'     => true,
             'create'   => $policy->create($user), // admin only
             'download' => $user->role->role_name === 'admin', // admin only
             'viewTabs'    => $user->role->role_name === 'admin', // false for students
@@ -105,13 +113,20 @@ class PaymentHistoryController extends Controller
             ],
             'PaymentList' => $payments,
             'can'         => $can,
+            'userRole' => auth()->user()->role->role_name,
         ]);
     }
+
+    public function myPaymentHistory()
+    {
+        $userId = auth()->id();
+        return $this->paymentHistory($userId);
+    }
+
 
 
     public function storePayment(Request $request)
     {
-
         $policy = new PaymentPolicy();
         $user = auth()->user();
 
@@ -144,7 +159,7 @@ class PaymentHistoryController extends Controller
             $path = $file->store('payments', 'public');
 
             PaymentFile::create([
-                'payment_file_id' => Str::uuid(), 
+                'payment_file_id' => Str::uuid(),
                 'payment_id'      => $payment->payment_id,
                 'file_name'       => $file->getClientOriginalName(),
                 'file_path'       => $path,
@@ -153,6 +168,9 @@ class PaymentHistoryController extends Controller
                 'uploaded_at'     => now(),
             ]);
         }
+
+        // Send notification
+        $this->paymentHistoryService->sendPaymentHistoryNotification($payment);
 
         return redirect()->back()->with('success', 'Payment added successfully!');
     }
@@ -183,7 +201,7 @@ class PaymentHistoryController extends Controller
             'viewArchive'  => $user->role->role_name === 'admin', // false for students
             'viewEdit' => $user->role->role_name === 'admin', // false for students
             'viewFilefilter' => $user->role->role_name === 'admin', // false for students
-            
+
         ];
 
         return Inertia::render('Accounting/StaffAccounting/PaymentInfo', [
@@ -195,9 +213,11 @@ class PaymentHistoryController extends Controller
             'payment_amount'  => $payment->payment_amount,
             'deleted_at'      => $payment->deleted_at,
             'user' => [
-                'name'   => $payment->user->first_name . ' ' . ($payment->user->last_name ?? ''),
+                'first_name'   => $payment->user->first_name,
+                'last_name'   => $payment->user->last_name,
                 'email'  => $payment->user->email,
                 'status' => $payment->user->student->enrollment_status ?? null,
+                'profile_image' => $payment->user->profile_image,
             ],
             'files' => $payment->files->map(fn($file) => [
                 'id'   => $file->payment_file_id,
@@ -207,6 +227,7 @@ class PaymentHistoryController extends Controller
                 'deleted_at' => $file->deleted_at,
             ]),
             'can' => $can,
+            'userRole' => auth()->user()->role->role_name,
         ]);
     }
 
@@ -442,7 +463,7 @@ class PaymentHistoryController extends Controller
 
         $columns = ['Payment Method', 'Transaction ID', 'Receipt Date', 'Payment Amount'];
 
-        $callback = function() use ($payments, $columns) {
+        $callback = function () use ($payments, $columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
@@ -460,6 +481,4 @@ class PaymentHistoryController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
-
 }
-

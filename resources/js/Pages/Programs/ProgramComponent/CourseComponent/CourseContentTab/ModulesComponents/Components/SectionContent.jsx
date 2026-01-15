@@ -48,37 +48,30 @@ export default function SectionContent({
     };
 
     const handleSectionContentClick = () => {
-        console.log("Clicked");
-
-        // Code here for route
-
-        // To add the route for this it need to have a contentType that will check if its activity or assessment to specify the route
-        // Currently cant make this functionality as data display in view assessment or view materials is coming from materialList or assessmentList
-        // While data here is coming from sectionContentList inside sectionDetails
-        // If coding backend started the data on view assessment or view materials should be directly coming from backend not on lists in the stores
-
-        if (itemDetails.item_type === "App\\Models\\Programs\\Material") {
-            router.visit(
-                route("material.view", {
-                    program: program.program_id,
-                    course: course.course_id,
-                    material: itemDetails.item.material_id,
-                }),
-                {
-                    preserveScroll: false,
-                }
-            );
-        } else {
-            router.visit(
-                route("program.course.assessment.view", {
-                    program: program.program_id,
-                    course: course.course_id,
-                    assessment: itemDetails.item.assessment_id,
-                }),
-                {
-                    preserveScroll: false,
-                }
-            );
+        if (!sectionDetails.deleted_at) {
+            if (itemDetails.item_type === "App\\Models\\Programs\\Material") {
+                router.visit(
+                    route("material.view", {
+                        program: program.program_id,
+                        course: course.course_id,
+                        material: itemDetails.item.material_id,
+                    }),
+                    {
+                        preserveScroll: false,
+                    }
+                );
+            } else {
+                router.visit(
+                    route("program.course.assessment.view", {
+                        program: program.program_id,
+                        course: course.course_id,
+                        assessment: itemDetails.item.assessment_id,
+                    }),
+                    {
+                        preserveScroll: false,
+                    }
+                );
+            }
         }
     };
 
@@ -119,9 +112,9 @@ export default function SectionContent({
                         </div>
                     )}
                     <div
-                        className={`flex items-center gap-2 md:gap-20 justify-between pr-5 pl-5 pb-5 cursor-pointer ${
-                            disabled ? "pt-5" : null
-                        } text-ascend-black`}
+                        className={`flex items-center gap-2 md:gap-20 justify-between pr-5 pl-5 pb-5 ${
+                            sectionDetails.deleted_at ? "" : "cursor-pointer"
+                        } ${disabled ? "pt-5" : null} text-ascend-black`}
                     >
                         <div className="flex items-center space-x-5">
                             <RoleGuard allowedRoles={["student"]}>
@@ -142,10 +135,10 @@ export default function SectionContent({
                         </div>
 
                         {!disabled && (
-                            <RoleGuard allowedRoles={["admin", "faculty"]}>
+                            <RoleGuard allowedRoles={["admin"]}>
                                 <div
                                     onClick={stopPropagation}
-                                    className="dropdown dropdown-end cursor-pointer relative"
+                                    className="dropdown dropdown-end cursor-pointer"
                                 >
                                     <div
                                         tabIndex={0}
@@ -157,16 +150,11 @@ export default function SectionContent({
 
                                     <ul
                                         tabIndex={0}
-                                        className="dropdown-content menu space-y-2 font-bold bg-ascend-white w-32 px-0 border border-ascend-gray1 shadow-lg !transition-none text-ascend-black absolute z-999"
+                                        className="dropdown-content menu space-y-2 font-bold bg-ascend-white w-32 px-0 border border-ascend-gray1 shadow-lg !transition-none text-ascend-black"
                                     >
                                         <li onClick={handleClickEdit}>
                                             <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
                                                 Edit
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300">
-                                                Delete
                                             </a>
                                         </li>
                                     </ul>

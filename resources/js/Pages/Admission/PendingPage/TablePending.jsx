@@ -61,7 +61,7 @@ export default function PendingStudentsTable({ active }) {
     }, [active]);
 
     return (
-        <div>
+        <div className="space-y-5">
             {/*=========================== Search Input ===========================*/}
             <div className="flex justify-end mb-3">
                 <div className="relative">
@@ -156,10 +156,17 @@ export default function PendingStudentsTable({ active }) {
 
             {/*=========================== Download & Pagination ===========================*/}
             {pendingStudents?.data?.length > 0 && (
-                <div className="flex flex-wrap gap-5 justify-between items-center mt-5">
+                <div className="flex flex-wrap-reverse items-center justify-between gap-5">
                     {/* Download Section (LEFT) */}
-                    <div className="flex items-center space-x-[0.5px] [&>*]:!mt-0">
-                        <PrimaryButton text="Download" />
+                    <div className="flex gap-[1px]">
+                        <PrimaryButton
+                            text="Download PDF"
+                            doSomething={() => {
+                                window.location.href = route(
+                                    "admissions.pending.exportPdf"
+                                );
+                            }}
+                        />
                         <div className="dropdown dropdown-end cursor-pointer">
                             <button
                                 tabIndex={0}
@@ -183,7 +190,7 @@ export default function PendingStudentsTable({ active }) {
                                         )}
                                         className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300"
                                     >
-                                        Download as pdf
+                                        Download as PDF
                                     </a>
                                 </li>
                                 <li>
@@ -193,7 +200,7 @@ export default function PendingStudentsTable({ active }) {
                                         )}
                                         className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300"
                                     >
-                                        Download as csv
+                                        Download as CSV
                                     </a>
                                 </li>
                             </ul>
@@ -201,9 +208,10 @@ export default function PendingStudentsTable({ active }) {
                     </div>
 
                     {/* Pagination (RIGHT) */}
+
                     {pendingStudents?.links?.length > 0 &&
                         pendingStudents?.last_page > 1 && (
-                            <div className="flex items-center [&>*]:!mt-0">
+                            <div className="w-full sm:w-fit">
                                 <Pagination
                                     links={pendingStudents.links}
                                     currentPage={pendingStudents.current_page}

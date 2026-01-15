@@ -21,7 +21,7 @@ export default function StudentGradeRow({
         <tr className="hover:bg-ascend-lightblue">
             <td>
                 <input
-                    disabled={!student.grade} // Disable if student has no grades
+                    disabled={!student.grade} // Disable if student has no grades           
                     type="checkbox"
                     className="accent-ascend-blue w-4 h-4 cursor-pointer"
                     checked={selectedStudentGrades.some(

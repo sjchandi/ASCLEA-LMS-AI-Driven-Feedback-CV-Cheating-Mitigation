@@ -50,16 +50,8 @@ export default function ApprovalModal({ toggleModal }) {
           Are you sure you want to approve this request?
         </h2>
         <div>
-          <label htmlFor="approval-message">Add Message</label>
-          <textarea
-            id="approval-message"
-            className="border w-full p-2 mt-2 focus:outline-ascend-blue"
-            rows={5}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
         </div>
-        <div className="flex justify-end space-x-2">
+        <div className="flex justify-center space-x-2">
           <SecondaryButton doSomething={toggleModal} text={"Close"} />
           <PrimaryButton btnType={"submit"} text={"Approve"} />
         </div>

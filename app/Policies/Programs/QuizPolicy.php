@@ -10,8 +10,11 @@ class QuizPolicy
     // Determine wether the user can access the edit quiz form of the assessment
     public function viewEditQuizForm(User $user, Assessment $assessment): bool
     {
-        // Only the author of the quiz assessment can view the quiz form
-        $isAuthorized = $assessment->created_by === $user->user_id;
+        // Admin and author can view the quiz edit form
+        $isAuthor = $assessment->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
+
+        $isAuthorized = $isAuthor || $isAdmin;
 
         return $isAuthorized;
     }
@@ -19,8 +22,11 @@ class QuizPolicy
     // Determine wether use can update the quiz details
     public function updateQuiz(User $user, Assessment $assessment): bool
     {
-        // Only the author of the quiz assessment can edit the quiz form
-        $isAuthorized = $assessment->created_by === $user->user_id;
+        // Admin and author can edit the quiz form
+        $isAuthor = $assessment->created_by === $user->user_id;
+        $isAdmin = $user->role->role_name == "admin";
+
+        $isAuthorized = $isAuthor || $isAdmin;
 
         return $isAuthorized;
     }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\CV\DetectedCheating;
 use App\Models\Programs\AssessmentSubmission;
 use App\Models\CV\DetectedCheatingFile;
+use App\Models\CV\tabDetect;
 
 class DetectedCheatingController extends Controller
 {
@@ -68,6 +69,47 @@ public function fetchBySubmission($assessment_submission_id)
     ]);
 }
 
+public function storeTabDetect(Request $request)
+{
+    $validated = $request->validate([
+        'assessment_submission_id' => 'required|uuid|exists:assessment_submissions,assessment_submission_id',
+        'message' => 'required|string|max:255',
+    ]);
 
+    $tabDetect = tabDetect::create([
+        'assessment_submission_id' => $validated['assessment_submission_id'],
+        'message' => $validated['message'],
+    ]);
+
+    if ($request->expectsJson()) {
+        return response()->json([
+            'success' => true,
+            'tabdetect_id' => $tabDetect->tabdetect_id,
+        ]);
+    }
+
+    return back()->with('success', 'Tab detect log recorded successfully.');
 }
+
+public function fetchTabDetectBySubmission($assessment_submission_id)
+{
+    // Fetch tab detect records
+    $tabDetects = TabDetect::where('assessment_submission_id', $assessment_submission_id)->get();
+
+    $submission = \DB::table('assessment_submissions')
+        ->where('assessment_submissions.assessment_submission_id', $assessment_submission_id)
+        ->first();
+
+    if ($tabDetects->isEmpty()) {
+        return response()->json([
+            'message' => 'No tab detect records found.',
+        ], 404);
+    }
+
+    return response()->json([
+        'tab_detects' => $tabDetects,
+    ]);
+}
+}
+
 

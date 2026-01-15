@@ -2,8 +2,12 @@
 
 namespace App\Services\Programs;
 
+use App\Models\Course;
+use App\Models\Program;
 use App\Models\Programs\Material;
 use App\Models\Programs\MaterialFile;
+use App\Models\User;
+use App\Services\NotificationService;
 use App\Services\PdfConverter;
 use Carbon\Carbon;
 use Exception;
@@ -13,6 +17,17 @@ use Illuminate\Support\Facades\Storage;
 
 class MaterialService
 {
+    protected SectionService $sectionService;
+    protected SectionItemService $sectionItemService;
+    protected NotificationService $notificationService;
+
+    public function __construct(SectionService $sectionService, SectionItemService $sectionItemService, NotificationService $notificationService)
+    {
+        $this->sectionService = $sectionService;
+        $this->sectionItemService = $sectionItemService;
+        $this->notificationService = $notificationService;
+    }
+
     public function saveMaterialFiles(array $materialFiles, Material $material)
     {
         $uploadedFiles = [];
@@ -62,25 +77,17 @@ class MaterialService
         MaterialFile::insert($uploadedFiles);
     }
 
-    public function getMaterialList(string $userId, string  $courseId)
+    public function getMaterialList(User $user, string  $courseId)
     {
         $materialList = Material::where('course_id', $courseId)
-            ->with(['author' => function ($query) {
-                $query->select('user_id', 'first_name', 'last_name');
-            }])
-            ->where(function ($query) use ($userId) {
-                // Display material added by the user or material that was publsiehd
-                $query->where('created_by', $userId)
-                    ->orWhere('status', 'published');
-            })
-            ->with(['materialFiles' => function ($query) {
-                $query->select('material_id', 'material_file_id', 'file_name', 'file_path');
-            }])
+            ->with([
+                'author:user_id,first_name,last_name',
+                'materialFiles:material_id,material_file_id,file_name,file_path'
+            ])
             ->withTrashed()
-            ->where(function ($query) use ($userId) {
-                // Display not deleted materials or if deleted the user  must be t he owmner
-                $query->whereNull('deleted_at')
-                    ->orWhere('created_by', $userId);
+            ->when($user->role->role_name === 'student', function ($q) {
+                $q->where('status', 'published')
+                    ->whereNull('deleted_at');
             })
             ->whereDoesntHave('sectionItem') // Only gets materials not created in section
             ->orderBy('created_at', 'desc')
@@ -134,7 +141,8 @@ class MaterialService
 
     public function archiveMaterial(Material $material)
     {
-        $material->delete(); // Soft delete the material
+
+        $material->delete(); // Soft delete the material 
 
         return  $this->getmaterialCompleteDetails($material);
     }
@@ -148,5 +156,35 @@ class MaterialService
         $material->restore();
 
         return  $this->getmaterialCompleteDetails($material);
+    }
+
+    public function getUsersToNotify($courseId)
+    {
+        $users = User::where(function ($query) use ($courseId) {
+            $query->whereHas('programs.courses', function ($q) use ($courseId) {
+                $q->where('course_id', $courseId);
+            })
+                ->orWhereHas('role', function ($q) {
+                    $q->where('role_name', 'admin');
+                });
+        })
+            ->where('user_id', '!=', request()->user()->user_id)
+            ->pluck('user_id')
+            ->toArray();
+
+        return $users;
+    }
+
+    public function sendMaterialNotification(Material $material, Course $course, Program $program)
+    {
+        $users = $this->getUsersToNotify($course->course_id);
+
+        $title = "New material available";
+        $body = "A new material {$material->material_title} is now available in {$course->course_name}.";
+
+        $baseUrl = config('app.app_base_url');
+        $actionUrl = "{$baseUrl}/programs/{$program->program_id}/courses/{$course->course_id}/materials/{$material->material_id}";
+
+        $this->notificationService->notifyUsers($users, $title, $body, $actionUrl);
     }
 }

@@ -3,10 +3,15 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Bar } from "react-chartjs-2";
 import { MdArrowUpward } from "react-icons/md";
 import ViewEvidence from "./ViewEvidence";
+import ViewTabEvidence from "./ViewTabEvidence";
 import { calcPercentage } from "../../../../../../../../../Utils/calcPercentage";
 import { convertDurationMinutes } from "../../../../../../../../../Utils/convertDurationMinutes";
 import { cleanDecimal } from "../../../../../../../../../Utils/cleanDecimal";
 import ProfileImage from "../../../../../../../../../Components/ProfileImage";
+import PrimaryButton from "../../../../../../../../../Components/Button/PrimaryButton";
+import AlertModal from "../../../../../../../../../Components/AlertModal";
+import useQuizResult from "../Hooks/useQuizResult";
+import { usePage } from "@inertiajs/react";
 
 export default function StudentQuizDetails({
     assessmentSubmission,
@@ -15,12 +20,19 @@ export default function StudentQuizDetails({
     quiz,
     warningsCount,
 }) {
+    const { assessment, courseId, auth } = usePage().props;
+
     const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
+    const [tabSwitchEvidenceOpen, setTabSwitchEvidenceOpen] = useState(false);
     const [improvementRateDetails, setImprovementRateDetails] = useState({
         label: [],
         data: [],
         improvementPercent: 0,
     });
+    const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+
+    // Custom hook
+    const { handleResetStudentResponse, isResetLoading } = useQuizResult();
 
     const calculateImprovementRate = () => {
         let improvementRateDetails = {};
@@ -54,6 +66,7 @@ export default function StudentQuizDetails({
     }, [assessmentSubmission]);
 
     const [warningCount, setWarningCount] = useState(0);
+    const [tabSwitchCount, setTabSwitchCount] = useState(0);
 
     useEffect(() => {
         const fetchWarnings = async () => {
@@ -70,14 +83,57 @@ export default function StudentQuizDetails({
             }
         };
 
+        const fetchTabSwitches = async () => {
+            try {
+                const res = await fetch(
+                    `/tab-switching/${assessmentSubmission.assessment_submission_id}`
+                );
+                if (!res.ok) throw new Error("Failed to fetch tab switches");
+
+                const data = await res.json();
+                setTabSwitchCount(data.tab_detects?.length || 0);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
         fetchWarnings();
+        fetchTabSwitches();
     }, [assessmentSubmission.assessment_submission_id]);
 
     return (
         <div className="bg-ascend-white p-5 space-y-5 border border-ascend-gray1 shadow-shadow1">
             <div className="flex items-center justify-between">
                 <h1 className="text-size6 font-bold">Student Quiz Result</h1>
+                {(auth.user.role_name === "admin" ||
+                    assessment.created_by === auth.user.user_id) && (
+                    <PrimaryButton
+                        text={"Reset"}
+                        btnColor={"bg-ascend-yellow"}
+                        doSomething={() => setIsAlertModalOpen(true)}
+                    />
+                )}
             </div>
+
+            {isAlertModalOpen && (
+                <AlertModal
+                    title={"Confirm Reset"}
+                    description={
+                        "This will permanently reset the selected student’s response. Do you want to continue?"
+                    }
+                    closeModal={() => setIsAlertModalOpen(false)}
+                    onConfirm={() =>
+                        handleResetStudentResponse(
+                            courseId,
+                            quiz.quiz_id,
+                            assessment.assessment_id,
+                            assessmentSubmission.assessment_submission_id,
+                            setIsAlertModalOpen
+                        )
+                    }
+                    isLoading={isResetLoading}
+                />
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <div className="col-span-full lg:col-span-1 space-y-5">
@@ -151,6 +207,27 @@ export default function StudentQuizDetails({
                                 </span>
                             </div>
                         </div>
+
+                        <div>
+                            <h1 className="text-size4 font-bold text-ascend-gray3">
+                                Tab Switches
+                                <span
+                                    onClick={() =>
+                                        setTabSwitchEvidenceOpen(
+                                            !tabSwitchEvidenceOpen
+                                        )
+                                    }
+                                    className="ml-2 text-ascend-black text-size1 cursor-pointer hover:text-ascend-blue transition-all duration-300 text-nowrap hover:underline"
+                                >
+                                    See details
+                                </span>
+                            </h1>
+                            <div className="flex items-center gap-1">
+                                <span className="text-size7 font-semibold">
+                                    {tabSwitchCount}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div className="sm:col-span-2 space-y-5">
@@ -217,6 +294,16 @@ export default function StudentQuizDetails({
             {isEvidenceOpen && (
                 <ViewEvidence
                     setIsEvidenceOpen={setIsEvidenceOpen}
+                    assessmentSubmissionId={
+                        assessmentSubmission.assessment_submission_id
+                    }
+                    studentData={studentData}
+                />
+            )}
+
+            {tabSwitchEvidenceOpen && (
+                <ViewTabEvidence
+                    setIsEvidenceOpen={setTabSwitchEvidenceOpen}
                     assessmentSubmissionId={
                         assessmentSubmission.assessment_submission_id
                     }

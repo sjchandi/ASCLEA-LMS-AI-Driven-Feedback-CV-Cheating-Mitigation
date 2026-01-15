@@ -7,7 +7,7 @@ import { IoSearch, IoCaretDownOutline } from "react-icons/io5";
 import { debounce } from "lodash";
 import PrimaryButton from "../../../Components/Button/PrimaryButton";
 
-export default function EnrolledStudentsTable({ active }) {
+export default function EnrolledStudentsTable({ active, role }) {
     const route = useRoute();
     const { enrolledStudents } = usePage().props;
     const [search, setSearch] = useState("");
@@ -61,7 +61,7 @@ export default function EnrolledStudentsTable({ active }) {
     }, [active]);
 
     return (
-        <div>
+        <div className="space-y-5">
             {/*=========================== Search Input ===========================*/}
             <div className="flex justify-end mb-3">
                 <div className="relative">
@@ -156,11 +156,18 @@ export default function EnrolledStudentsTable({ active }) {
             </div>
 
             {/*=========================== Download & Pagination ===========================*/}
-            {enrolledStudents?.data?.length > 0 && (
-                <div className="flex flex-wrap gap-5 justify-between items-center mt-5">
+            {enrolledStudents?.data?.length > 0 && role === 'admin' && (
+                <div className="flex flex-wrap-reverse items-center justify-between gap-5">
                     {/* Download Section (LEFT) */}
-                    <div className="flex items-center space-x-[0.5px] [&>*]:!mt-0">
-                        <PrimaryButton text="Download" />
+                    <div className="flex gap-[1px]">
+                        <PrimaryButton
+                            text="Download PDF"
+                            doSomething={() => {
+                                window.location.href = route(
+                                    "admissions.enrolled.exportPdf"
+                                );
+                            }}
+                        />
                         <div className="dropdown dropdown-end cursor-pointer">
                             <button
                                 tabIndex={0}
@@ -184,7 +191,7 @@ export default function EnrolledStudentsTable({ active }) {
                                         )}
                                         className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300"
                                     >
-                                        Download as pdf
+                                        Download as PDF
                                     </a>
                                 </li>
                                 <li>
@@ -194,7 +201,7 @@ export default function EnrolledStudentsTable({ active }) {
                                         )}
                                         className="w-full text-left hover:bg-ascend-lightblue hover:text-ascend-blue transition duration-300"
                                     >
-                                        Download as csv
+                                        Download as CSV
                                     </a>
                                 </li>
                             </ul>
@@ -204,7 +211,7 @@ export default function EnrolledStudentsTable({ active }) {
                     {/* Pagination (RIGHT) */}
                     {enrolledStudents?.links?.length > 0 &&
                         enrolledStudents?.last_page > 1 && (
-                            <div className="flex items-center [&>*]:!mt-0">
+                            <div className="w-full sm:w-fit">
                                 <Pagination
                                     links={enrolledStudents.links}
                                     currentPage={enrolledStudents.current_page}

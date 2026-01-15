@@ -97,11 +97,13 @@ export default function ViewMaterial({
                     </div>
                 </div>
 
-                <ReactQuill
-                    value={material.material_description}
-                    readOnly={true}
-                    theme={"bubble"}
-                />
+                {material.material_description && (
+                    <ReactQuill
+                        value={material.material_description}
+                        readOnly={true}
+                        theme={"bubble"}
+                    />
+                )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {material.material_files.length > 0 &&

@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { route } from "ziggy-js";
 import { router } from "@inertiajs/react";
 import { displayToast } from "../../../../Utils/displayToast";
 import DefaultCustomToast from "../../../../Components/CustomToast/DefaultCustomToast";
+import { debounce } from "lodash";
 
 export default function useArchive() {
     const [isLoading, setIsLoading] = useState(false);
+
+    const [search, setSearch] = useState("");
 
     // Course
     const handleRestoreCourse = (promgramId, courseId) => {
@@ -34,31 +37,6 @@ export default function useArchive() {
         );
     };
 
-    const handleForceDeleteCourse = (promgramId, courseId) => {
-        setIsLoading(true);
-        router.delete(
-            route("course.force.delete", {
-                program: promgramId,
-                course: courseId,
-            }),
-            {
-                showProgress: false,
-                only: ["archivedCourses", "flash"],
-                onSuccess: (page) => {
-                    displayToast(
-                        <DefaultCustomToast
-                            message={page.props.flash.success}
-                        />,
-                        "success"
-                    );
-                },
-                onFinish: () => {
-                    setIsLoading(false);
-                },
-            }
-        );
-    };
-
     // Adminsitration
     const handleRestoreStaff = (staffId, setOpenAlertModal) => {
         setIsLoading(true);
@@ -67,31 +45,6 @@ export default function useArchive() {
                 id: staffId,
             }),
             {},
-            {
-                showProgress: false,
-                only: ["archivedStaff", "flash"],
-                onSuccess: (page) => {
-                    displayToast(
-                        <DefaultCustomToast
-                            message={page.props.flash.success}
-                        />,
-                        "success"
-                    );
-                    setOpenAlertModal(false);
-                },
-                onFinish: () => {
-                    setIsLoading(false);
-                },
-            }
-        );
-    };
-
-    const handleForceDeleteStaff = (staffId, setOpenAlertModal) => {
-        setIsLoading(true);
-        router.delete(
-            route("staff.force.delete", {
-                id: staffId,
-            }),
             {
                 showProgress: false,
                 only: ["archivedStaff", "flash"],
@@ -138,37 +91,44 @@ export default function useArchive() {
         );
     };
 
-    const handleForceDeleteStudent = (studentId, setOpenAlertModal) => {
-        setIsLoading(true);
-        router.delete(
-            route("student.force.delete", {
-                student: studentId,
-            }),
+    // Search
+
+    const debounceHandleSearch = useMemo(() => {
+        const handleSearch = (e) => {
+            setSearch(e.target.value);
+        };
+
+        return debounce(handleSearch, 300);
+    }, []);
+
+    useEffect(() => {
+        return () => debounceHandleSearch.cancel();
+    }, []);
+
+    const searchName = (only) => {
+        const query = {};
+
+        if (search.trim()) query.search = search.trim();
+
+        router.get(
+            route("archives.index", { _query: query }),
+            {},
             {
                 showProgress: false,
-                only: ["archivedStudents", "flash"],
-                onSuccess: (page) => {
-                    displayToast(
-                        <DefaultCustomToast
-                            message={page.props.flash.success}
-                        />,
-                        "success"
-                    );
-                    setOpenAlertModal(false);
-                },
-                onFinish: () => {
-                    setIsLoading(false);
-                },
+                preserveScroll: true,
+                preserveState: true,
+                only: [only],
             }
         );
     };
+
     return {
         isLoading,
         handleRestoreCourse,
-        handleForceDeleteCourse,
         handleRestoreStaff,
-        handleForceDeleteStaff,
         handleRestoreStudent,
-        handleForceDeleteStudent,
+        search,
+        debounceHandleSearch,
+        searchName,
     };
 }
